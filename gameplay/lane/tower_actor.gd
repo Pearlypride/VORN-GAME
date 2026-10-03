@@ -6,6 +6,9 @@ extends StaticBody3D
 @export_range(0.1, 1000.0, 0.1) var tower_damage: float = 90.0
 @export_range(0.1, 100.0, 0.1) var tower_range: float = 11.0
 @export_range(0.1, 20.0, 0.1) var tower_attack_cooldown: float = 1.2
+@export_range(0.0, 5.0, 0.01) var attack_point: float = 0.35
+@export_range(0.0, 5.0, 0.01) var recovery_duration: float = 0.35
+@export_range(0.1, 100.0, 0.1) var projectile_speed: float = 18.0
 @export_range(0.1, 3.0, 0.05) var acquisition_interval: float = 0.25
 @export_range(0.1, 10.0, 0.1) var hero_aggro_duration: float = 2.5
 var destroyed: bool = false
@@ -14,13 +17,14 @@ var aggro_target: CombatActor
 var aggro_remaining: float = 0.0
 var _identity: CombatActor
 var _stats: ActorStats
+var _attacks: BasicAttackController
 var _roster: LaneCombatRoster
 var _scan_left: float = 0.0
-var _attack_left: float = 0.0
 
 func _ready() -> void:
 	_identity = $CombatActor as CombatActor
 	_stats = $Stats as ActorStats
+	_attacks = $BasicAttackController as BasicAttackController
 	_identity.team = team
 	_identity.actor_kind = &"tower"
 	_stats.max_health = tower_health
@@ -28,6 +32,7 @@ func _ready() -> void:
 	_stats.attack_damage = tower_damage
 	_stats.attack_range = tower_range
 	_stats.attack_cooldown = tower_attack_cooldown
+	_attacks.configure(BasicAttackController.AttackType.RANGED, attack_point, recovery_duration, projectile_speed)
 	_stats.died.connect(_on_died)
 	_roster = get_tree().get_first_node_in_group("lane_combat_roster") as LaneCombatRoster
 
@@ -35,7 +40,6 @@ func _physics_process(delta: float) -> void:
 	if destroyed:
 		return
 	_scan_left -= delta
-	_attack_left = maxf(0.0, _attack_left - delta)
 	aggro_remaining = maxf(0.0, aggro_remaining - delta)
 	if aggro_remaining <= 0.0:
 		aggro_target = null
@@ -44,11 +48,12 @@ func _physics_process(delta: float) -> void:
 		_acquire_target()
 	if is_instance_valid(target_actor) and _identity.can_damage(target_actor):
 		if _flat_distance(global_position, target_actor.world_position()) > tower_range:
+			_attacks.cancel_windup()
 			target_actor = null
-		elif _attack_left <= 0.0:
-			target_actor.receive_damage(tower_damage, self, &"basic")
-			_attack_left = tower_attack_cooldown
+		else:
+			_attacks.try_attack(target_actor.actor)
 	else:
+		_attacks.cancel_windup()
 		target_actor = null
 
 func _acquire_target() -> void:
@@ -83,6 +88,7 @@ func notify_hero_aggro(attacker: CombatActor) -> void:
 func _on_died() -> void:
 	destroyed = true
 	target_actor = null
+	_attacks.stop_attacking()
 	set_physics_process(false)
 	$Visual.hide()
 	$CollisionShape3D.set_deferred("disabled", true)

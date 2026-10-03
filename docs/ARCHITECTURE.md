@@ -8,7 +8,7 @@ Code is grouped by responsibility:
 
 - `gameplay/actors/`: player movement and hero lifecycle
 - `gameplay/stats/`: reusable health, mana, regen, and combat stats
-- `gameplay/combat/`: basic attack target/range/cooldown rules
+- `gameplay/combat/`: attack intent validation, shared timing controller, damage metadata, and ranged basic-attack projectile
 - `gameplay/lane/`: lane path, minion definitions/AI, wave spawners, tower behavior, and lane setup
 - `gameplay/economy/` and `gameplay/progression/`: last-hit wallet and proximity XP/levels
 - `gameplay/heroes/`: hero base-stat and ability-list resource
@@ -24,11 +24,11 @@ Code is grouped by responsibility:
 
 `HeroDefinition` supplies configurable base stats and ability definitions. `PlayerController` applies the hero data during startup; the definition is data rather than runtime state. Dummies each own an independent `ActorStats` node and handle only their own death presentation and respawn. No dummy contains player-specific logic.
 
-`CombatComponent` owns basic attack target validation, range checks, cooldown, and stat-based damage. It rejects dead/invalid targets and stops attacking when either actor dies. Ability damage is applied through `ActorStats.apply_damage()` by separate effect resources; ability code does not read mouse or keyboard events.
+`CombatComponent` owns the hero's selected attack target, validates hostility and life, and delegates in-range attack intent to `BasicAttackController`. The shared controller owns IDLE/WINDUP/RELEASE/RECOVERY timing for heroes, minions, and towers. It applies melee damage at RELEASE or spawns a ranged projectile. The controller and damage resolution do not read desktop input. Ability damage is applied through `ActorStats.apply_damage()` by separate effect resources.
 
-`CombatActor` composes team identity, actor kind, alive state, hostility checks, and damage receipt onto a unit without requiring a shared gameplay inheritance tree. `TeamRules` is the central hostility policy. `LaneCombatRoster` caches registered combat actors and answers bounded-radius queries for minion/tower AI and area effects. Damage carries source actor and category through `ActorStats`; minion death uses the last source for gold and attack aggro.
+`CombatActor` composes team identity, actor kind, alive state, hostility checks, and damage receipt onto a unit without requiring a shared gameplay inheritance tree. `TeamRules` is the central hostility policy. `LaneCombatRoster` caches registered combat actors and answers bounded-radius queries for minion/tower AI and area effects. Each accepted health change creates a `DamageEvent` with source, target, amount, category, and lethal flag. Minion death uses the final impact source for gold; only a hero basic-attack impact triggers hero aggro.
 
-`PlayerController` retains the Phase 2 semantic `move_to`, `attack_target`, `stop_command`, and `clear_command` operations. Ground steering and attack pursuit remain separate from desktop mouse picking.
+`PlayerController` retains the semantic `move_to`, `attack_target`, `stop_command`, and `clear_command` operations. Desktop input turns mouse/keyboard actions into those commands; movement and attack pursuit remain separate from mouse picking. Touch adapters can emit the same commands.
 
 ## Ability flow and input
 
@@ -36,7 +36,7 @@ Code is grouped by responsibility:
 
 `AbilityController` owns per-hero runtime cooldown state and validates caster life, mana, cooldown, cast type, target validity, and range before spending. `AbilityDefinition` resources carry type, cost, cooldown, range, and an `AbilityEffect` resource. `AbilityCastContext` passes the caster, stats, target/point, and definition to that effect. `AbilityTargetingFeedback` presents range, point, AoE radius, and skillshot line with primitive geometry; presentation does not apply gameplay effects.
 
-The debug HUD reads state and formats it. It does not choose targets, apply damage, or advance cooldowns.
+The debug HUD reads state and formats it. It does not choose targets, apply damage, or advance attack timing. `ActorReadability` listens to `ActorStats` events and owns only world-space bars and short-lived damage numbers.
 
 ## Timed modifiers and hero life cycle
 
@@ -48,17 +48,17 @@ The debug HUD reads state and formats it. It does not choose targets, apply dama
 
 `LaneWorld` lays out one straight lane, constructs the shared roster/path, and owns one synchronized spawner and one tower per team. `LanePath` is a deterministic coordinate path; minions store progress from their home side. It can be replaced with a curve or navigation query behind the lane path API. Minions use cached roster queries on a timer, choose nearest targets by minion → hero → tower priority, and return to advance when combat ends. Hero basic attacks can briefly redirect nearby hostile minions; ability aggro is not implemented.
 
-The player receives gold only when it is the final damage source for a hostile minion. XP is granted to living hostile heroes inside the minion's configured XP radius, regardless of last hit. Levels 1–6 use a linear configurable threshold. Level growth adds configured maxima and damage while preserving absolute current HP/mana, capped by the new maxima. Towers are stationary, target minions before heroes, and temporarily prioritize an enemy hero that damages a friendly hero inside tower range. See [LANE_SYSTEM.md](LANE_SYSTEM.md) for the complete Phase 4 rules and limits.
+The player receives gold only when it is the final damage source on impact for a hostile minion. XP is granted to living hostile heroes inside the minion's configured XP radius, regardless of last hit. Levels 1–6 use a linear configurable threshold. Level growth adds configured maxima and damage while preserving absolute current HP/mana, capped by the new maxima. Towers are stationary, target minions before heroes, and temporarily prioritize an enemy hero that damages a friendly hero inside tower range. See [LANE_SYSTEM.md](LANE_SYSTEM.md) and [COMBAT_TIMING.md](COMBAT_TIMING.md) for the lane and impact rules.
 
 ## Camera and movement replacement path
 
 The orthographic MOBA camera is independent of the player, has fixed pitch, middle-mouse drag pan, and wheel zoom with exported pan speed and zoom limits. Desktop input controls only the camera rig.
 
-Hero ground movement and minion lane advance use direct steering. Obstacle-aware pathfinding is intentionally deferred. Hero move commands remain behind `PlayerController.move_to()`, and minion location progression is behind `LanePath`; a `NavigationAgent3D` or curve-backed path layer can replace these movement calculations without changing command, combat, or reward rules.
+Hero ground movement and minion lane advance use direct steering. Obstacle-aware pathfinding is intentionally deferred. Hero move commands remain behind `PlayerController.move_to()`, and minion location progression is behind `LanePath`; a `NavigationAgent3D` or curve-backed path layer can replace these movement calculations without changing command, combat, or reward rules. Keep the destination interface stable and swap only the steering/path implementation.
 
 ## Mobile and server-authority extension
 
-Mobile touch adapters can call the same `PlayerController` methods and `AbilityController.request_cast()` / confirmation methods as desktop input. Touch buttons and screen taps replace the event translation layer; ability effects, validation, movement, and combat remain input-independent.
+Mobile touch adapters can call the same `PlayerController` methods and `AbilityController.request_cast()` / confirmation methods as desktop input. Touch buttons and screen taps replace the event translation layer; ability effects, validation, movement, attack timing, and damage remain input-independent.
 
 This project is local-only. A future server-authoritative simulation can receive semantic ability/movement commands and run the same validation/effect rules on the server. Client-side visuals and prediction are not authority. No networking, replication, prediction, or trust protocol is implemented here.
 

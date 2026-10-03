@@ -1,55 +1,52 @@
 # Phase 4 lane system
 
-This document describes the current single-lane development prototype. Its rules are deliberately small and deterministic; they are not final competitive balance.
+This describes VORN's single-lane development prototype. Rules and timings are test values, not final competitive balance.
 
 ## Teams and combat actors
 
-`TeamRules` defines `NEUTRAL`, `TEAM_A`, and `TEAM_B`. Only different non-neutral teams are hostile. Heroes, dummies, minions, and towers compose a `CombatActor` node exposing team, kind, alive state, position, hostility, and damage receipt. `ActorStats` remains the health/stat component and accepts damage source plus category metadata. `LaneCombatRoster` caches registered identities and supplies bounded-radius queries; AI does not traverse the whole scene tree every frame.
+`TeamRules` defines `NEUTRAL`, `TEAM_A`, and `TEAM_B`; only different non-neutral teams are hostile. Heroes, dummies, minions, and towers compose `CombatActor` for team, kind, alive state, hostility, and damage receipt. `ActorStats` owns health and combat stats. `LaneCombatRoster` caches actors and answers bounded-radius queries, so AI does not walk the scene tree every frame.
 
-## Lane path and map
+## Lane path and minion FSM
 
-`LaneWorld` creates one straight lane between the Team A and Team B sides, a tower per side, and one spawner per team. `LanePath` maps distance from home to a world position and supplies each team's direction. Minions store scalar progress along this path. This path contract can later use a `Path3D`, waypoint list, or navigation layer without changing combat or wave code. Hero movement still uses Phase 2 direct destination steering.
+`LaneWorld` creates one straight lane, one tower per side, and one spawner per team. `LanePath` maps scalar home-to-enemy progress to a world position. It can later be replaced by a `Path3D`, waypoints, or a navigation query without changing combat or wave code. Hero destination steering is also intentionally direct; obstacle-aware navigation is deferred.
 
-## Minion lifecycle and targeting
+Each wave defaults to three melee minions and one ranged minion. Definitions configure health, speed, damage, range, attack interval, attack point, recovery, projectile speed, bounty, XP, and tint. Minions transition among `ADVANCE`, `COMBAT`, and `DEAD`. They advance on the lane, periodically query the cached roster, pursue a selected target into range, run the shared attack controller, reacquire after target death, and resume advancing when combat ends. Ranged minions' longer range naturally keeps them farther from targets than melee minions. Dead minions stop and are removed after a short delay.
 
-Each wave contains configurable counts, defaulting to three melee and one ranged minion. Definitions are resources with health, speed, damage, range, cooldown, bounty, XP reward, and tint. Melee minions have more health and short range; ranged minions have less health and longer range. Each minion transitions among `ADVANCE`, `COMBAT`, and `DEAD`. It advances, scans the cached roster on a timer, fights a valid target, reacquires after target death, then resumes advancing. Dead units stop and are removed after a short delay.
+Selection priority is nearest hostile minion, then hero, then tower. Temporary hero basic-attack aggro overrides that order. Ties resolve by distance. Changed targets cancel only attacks still in windup; a released attack resolves independently. There is no sophisticated focus logic or lane blocker rule.
 
-Target selection is deterministic: nearest hostile minion first, then nearest hostile hero, then nearest hostile tower; an active hero-attack aggro override takes precedence for its short duration. Ties within a priority resolve by distance. Minions reacquire on their scan interval, so a higher-priority nearby unit can replace a previous target. When aggro expires, normal priorities apply again. This simple priority does not model lane blockers, attack windup, projectile travel, or sophisticated focus rules.
+## Waves and aggro
 
-## Wave spawning
+Each side has a `WaveSpawner` with synchronized defaults: two seconds to the first wave, then eighteen-second intervals. Spawn composition and cadence are separate from minion AI.
 
-Each team has one `WaveSpawner` configured with the same initial delay and interval, so wave numbers stay synchronized. Defaults are a two-second first wave and eighteen-second interval for rapid testing. Spawners own composition and cadence only; minion AI owns combat. Wave spacing is configurable. No siege or super minions exist.
+When a hero basic attack targets an enemy hero, nearby hostile minions receive a short aggro override. Abilities do not trigger this behavior. Towers target the nearest hostile minion in range before a hero. An enemy hero that basic-attacks a friendly hero inside tower range can temporarily override the tower's normal target.
 
-## Aggro
+## Basic attacks and rewards
 
-When the hero's basic attack damages an enemy hero, the roster checks nearby enemy minions. Minions within the configured radius prefer the attacking hero for a limited duration. Minions then resume their normal deterministic target choice. Ability damage does not trigger this rule.
+Heroes, melee/ranged minions, and towers share `BasicAttackController`: `IDLE → WINDUP → RELEASE → RECOVERY`. Melee attacks validate the target again at release and apply damage then. Ranged attacks launch tracking primitive projectiles at release; impact applies damage only if the target is still alive and hostile. Dead or removed targets make the projectile expire without damage. Projectiles carry a snapshot of source team, damage, and category so released shots remain safe after their source dies.
 
-Towers select the nearest hostile minion in range, falling back to the nearest hostile hero if no hostile minion is available. If an enemy hero basic-attacks a friendly hero while inside tower range, the tower temporarily prioritizes that attacker. This is a short local override; there is no projectile or multi-tower aggro coordination.
-
-## Damage attribution and rewards
-
-`ActorStats.apply_damage(amount, source, category)` records the most recent damaging actor and category. On hostile minion death, the player receives its bounty only if the last source is the player hero. No passive gold is awarded. A living hostile hero inside the minion's XP radius receives XP regardless of last hit; dead heroes and allied heroes receive none. Wallet and progression state are separate components.
-
-The player starts at level 1 and can reach level 6. XP required is `base_xp_to_level + (level - 1) * xp_step_per_level`. XP spills over after a level. Hero definitions configure per-level health, mana, damage, and optional regeneration growth. Growth increases maximum stats and preserves current absolute HP/mana, capped at the new maximum; leveling does not heal the hero.
+Each accepted health change creates `DamageEvent` metadata (source, target, amount, category, lethal flag). Basic attacks use `BASIC_ATTACK`; ability effects use `ABILITY`. Last-hit gold is awarded from the final applied damage event at impact. Damage against a dead minion is ignored, so bounty cannot be awarded twice. XP goes to living hostile heroes within the minion's configured radius regardless of last hit. Wallet and progression are separate components. Heroes start at level one and can reach six; growth increases configured maxima and damage while preserving current absolute resources.
 
 ## Towers
 
-Each stationary tower has team, health, damage, range, and cooldown. It acquires the nearest hostile minion in range, attacks through the common combat identity/stats API, and stops when destroyed. Dead towers are invalid combat targets and have collision disabled. Heroes, abilities, and minions may damage towers through the same damage API. No armor, backdoor protection, regeneration, fortification, glyph, or base exposure rules exist.
+Towers are stationary ranged attackers with configurable interval, attack point, recovery, range, and projectile speed. They use the shared attack controller and tracking projectile, maintain minion-first targeting and brief hero aggro, and stop launching attacks when destroyed. Projectiles released before tower destruction continue to their hostile target. There is no armor, backdoor protection, regeneration, fortification, glyph, or base exposure rule.
 
-## HUD and validation
+## Feedback and validation
 
-The debug HUD shows gold, level/current/required XP, wave counts, and both tower health values in addition to the Phase 3 hero/ability status. Run all validations with:
+The debug HUD shows attack phase, windup progress, current attack target, time until next attack, target HP, command state, economy, levels, wave count, and tower HP. Heroes, minions, and towers have simple world-space health bars; accepted damage briefly floats a number above the unit. Presentation listens to stats and does not resolve combat.
+
+Run validation suites from the project root:
 
 ```sh
 godot --headless --path . --script res://tests/phase2_validation.gd
 godot --headless --path . --script res://tests/phase3_ability_validation.gd
 godot --headless --path . --script res://tests/phase4_lane_validation.gd
+godot --headless --path . --script res://tests/phase5_combat_validation.gd
 ```
 
-The automated Phase 4 setup creates waves and units deterministically rather than waiting for a complete live lane match.
+The test harnesses create units deterministically. Graphical checks remain necessary for attack responsiveness, cancellation feel, minion spacing, projectile speed/readability, last-hit feel, HP bars, and R buff feel.
 
-## Known simplifications and future authority
+## Simplifications and future authority
 
-There is one straight lane, direct steering, instant basic attacks, primitive unit visuals, no animations, no ranged-minion projectile, and no tower hero-aggro. The roster performs a bounded-distance pass over cached actors; this avoids scene-tree searches and per-frame scans, but very large populations may need a spatial hash or physics-area query. Wave sizes remain small for mobile-oriented development.
+This prototype has one straight lane, direct steering, primitive visuals, no attack animations, and no obstacle-aware navigation. The projectile directly tracks a target without collision geometry; navigation can later replace destination steering behind `PlayerController.move_to()` / the lane path interface without rewriting command or combat logic. Ranged target seeking uses periodic roster queries rather than per-frame full-scene scans. Larger populations may call for profiling and a spatial hash.
 
-Wave spawning, minion state, combat resolution, damage source, gold, XP, levels, and tower state are independent of desktop input and presentation. Those systems are candidates for server ownership later. Networking, replication, prediction, and authority enforcement are not implemented.
+Input adapters, minion AI, attack timing, damage, reward, and tower state are separate. A mobile adapter can issue the same semantic movement/attack and ability commands; a server can later own timing and damage resolution. Networking, prediction, replication, and authority enforcement are not implemented.

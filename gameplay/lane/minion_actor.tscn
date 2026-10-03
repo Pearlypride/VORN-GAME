@@ -1,8 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://gameplay/lane/minion_actor.gd" id="1_minion"]
 [ext_resource type="Script" path="res://gameplay/stats/actor_stats.gd" id="2_stats"]
 [ext_resource type="Script" path="res://gameplay/combat/combat_actor.gd" id="3_actor"]
+[ext_resource type="Script" path="res://gameplay/combat/basic_attack_controller.gd" id="4_attack"]
+[ext_resource type="Script" path="res://gameplay/combat/actor_readability.gd" id="5_readability"]
 
 [sub_resource type="CylinderMesh" id="CylinderVisual"]
 top_radius = 0.32
@@ -31,3 +33,10 @@ script = ExtResource("2_stats")
 script = ExtResource("3_actor")
 team = 1
 actor_kind = &"minion"
+
+[node name="BasicAttackController" type="Node3D" parent="."]
+script = ExtResource("4_attack")
+
+[node name="ActorReadability" type="Node3D" parent="."]
+script = ExtResource("5_readability")
+height_offset = 1.5

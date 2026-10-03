@@ -37,5 +37,5 @@ func _on_body_entered(body: Node3D) -> void:
 	var target_identity := body.get_node_or_null("CombatActor") as CombatActor
 	if stats == null or stats.current_health <= 0.0 or source_identity == null or target_identity == null or not source_identity.is_hostile_to(target_identity):
 		return
-	stats.apply_damage(damage, source_actor, &"ability")
+	stats.apply_damage(damage, source_actor, DamageEvent.ABILITY)
 	queue_free()

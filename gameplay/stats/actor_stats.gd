@@ -5,7 +5,7 @@ extends Node
 signal health_changed(current: float, maximum: float)
 signal mana_changed(current: float, maximum: float)
 signal died
-signal damage_received(amount: float, source: Node3D, category: StringName, killed: bool)
+signal damage_received(event: DamageEvent)
 
 @export_range(1.0, 10000.0, 1.0) var max_health: float = 100.0
 @export_range(0.0, 10000.0, 1.0) var max_mana: float = 0.0
@@ -20,6 +20,7 @@ var current_health: float
 var current_mana: float
 var last_damage_source: Node3D
 var last_damage_category: StringName = &""
+var last_damage_event: DamageEvent
 var _movement_speed_multiplier: float = 1.0
 var _attack_cooldown_multiplier: float = 1.0
 
@@ -56,14 +57,15 @@ func configure_from_hero(definition: HeroDefinition) -> void:
 	_attack_cooldown_multiplier = 1.0
 	restore_full_resources()
 
-func apply_damage(amount: float, source: Node3D = null, category: StringName = &"basic") -> void:
+func apply_damage(amount: float, source: Node3D = null, category: StringName = DamageEvent.BASIC_ATTACK) -> void:
 	if current_health <= 0.0 or amount <= 0.0:
 		return
 	last_damage_source = source
 	last_damage_category = category
 	current_health = maxf(0.0, current_health - amount)
 	health_changed.emit(current_health, max_health)
-	damage_received.emit(amount, source, category, current_health == 0.0)
+	last_damage_event = DamageEvent.new(source, get_parent() as Node3D, amount, category, current_health == 0.0)
+	damage_received.emit(last_damage_event)
 	if current_health == 0.0:
 		died.emit()
 

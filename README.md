@@ -22,6 +22,7 @@ Run the automated Phase 2, Phase 3, and Phase 4 checks with:
 godot --headless --path . --script res://tests/phase2_validation.gd
 godot --headless --path . --script res://tests/phase3_ability_validation.gd
 godot --headless --path . --script res://tests/phase4_lane_validation.gd
+godot --headless --path . --script res://tests/phase5_combat_validation.gd
 ```
 
 ## Controls
@@ -52,6 +53,9 @@ godot --headless --path . --script res://tests/phase4_lane_validation.gd
 - One straight lane with Team A/Team B sides, one tower per team, and synchronized repeating 3-melee/1-ranged minion waves
 - Minion advance/combat/death behavior, team-filtered target priorities, brief hero basic-attack aggro, and tower minion-first fire
 - Last-hit gold, proximity XP, levels 1–6, and configurable hero per-level stat growth
-- Debug HUD for HP/mana, gold, level/XP, waves, tower HP, target, command state, Q/W/E/R states, targeting mode and R buff timer
+- Shared IDLE/WINDUP/RELEASE/RECOVERY basic-attack lifecycle for the hero, melee/ranged minions, and towers
+- Tracking primitive projectiles for ranged hero attacks, ranged minions, and towers; damage and last-hit credit resolve on impact
+- World-space health bars and brief floating damage numbers for readable combat feedback
+- Debug HUD for HP/mana, attack phase/progress/target, command state, selected target, Q/W/E/R, waves, tower HP, economy and progression
 
-Movement and combat currently use direct steering/basic range checks in this simple lane. Obstacle-aware navigation and tower hero-aggro are intentionally deferred. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ABILITIES.md](docs/ABILITIES.md), and [docs/LANE_SYSTEM.md](docs/LANE_SYSTEM.md) for system details and simplifications.
+Movement uses direct steering/basic range checks in this simple lane. Obstacle-aware navigation is intentionally deferred. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ABILITIES.md](docs/ABILITIES.md), [docs/LANE_SYSTEM.md](docs/LANE_SYSTEM.md), and [docs/COMBAT_TIMING.md](docs/COMBAT_TIMING.md) for system details and simplifications.

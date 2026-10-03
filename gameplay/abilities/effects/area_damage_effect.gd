@@ -17,4 +17,4 @@ func execute(context: AbilityCastContext) -> void:
 			continue
 		var distance := Vector2(target.global_position.x - context.point.x, target.global_position.z - context.point.z).length()
 		if distance <= radius:
-			stats.apply_damage(damage, context.caster, &"ability")
+			stats.apply_damage(damage, context.caster, DamageEvent.ABILITY)

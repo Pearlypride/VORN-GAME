@@ -12,6 +12,7 @@ enum CommandState { IDLE, MOVE, ATTACK, STOP }
 var _stats: ActorStats
 var _combat: CombatComponent
 var _abilities: AbilityController
+var _attacks: BasicAttackController
 var _destination: Vector3
 var _has_destination: bool = false
 var command_state: CommandState = CommandState.IDLE
@@ -19,10 +20,12 @@ var command_state: CommandState = CommandState.IDLE
 func _ready() -> void:
 	_stats = $Stats as ActorStats
 	_combat = $Combat as CombatComponent
+	_attacks = $BasicAttackController as BasicAttackController
 	_abilities = $AbilityController as AbilityController
 	if hero_definition != null:
 		_stats.configure_from_hero(hero_definition)
 		_abilities.initialize(hero_definition, self, _stats)
+		_attacks.configure(hero_definition.basic_attack_type, hero_definition.attack_point, hero_definition.recovery_duration, hero_definition.basic_attack_projectile_speed)
 	_combat.target_changed.connect(_on_target_changed)
 
 func move_to(world_position: Vector3) -> void:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3]
+[gd_scene load_steps=40 format=3]
 
 [ext_resource type="Script" path="res://world/maps/dev_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://gameplay/actors/player_controller.gd" id="2_player"]
@@ -18,6 +18,8 @@
 [ext_resource type="Script" path="res://gameplay/economy/gold_wallet.gd" id="16_wallet"]
 [ext_resource type="Script" path="res://gameplay/progression/hero_progression.gd" id="17_progression"]
 [ext_resource type="Script" path="res://gameplay/lane/lane_world.gd" id="18_lane_world"]
+[ext_resource type="Script" path="res://gameplay/combat/basic_attack_controller.gd" id="19_attack"]
+[ext_resource type="Script" path="res://gameplay/combat/actor_readability.gd" id="20_readability"]
 
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
@@ -198,6 +200,13 @@ attack_cooldown = 0.8
 [node name="Combat" type="Node" parent="Player"]
 script = ExtResource("4_combat")
 
+[node name="BasicAttackController" type="Node3D" parent="Player"]
+script = ExtResource("19_attack")
+
+[node name="ActorReadability" type="Node3D" parent="Player"]
+script = ExtResource("20_readability")
+height_offset = 1.6
+
 [node name="AbilityController" type="Node" parent="Player"]
 script = ExtResource("11_abilities")
 
@@ -240,6 +249,10 @@ script = ExtResource("15_combat_actor")
 team = 2
 actor_kind = &"dummy"
 
+[node name="ActorReadability" type="Node3D" parent="Dummy1"]
+script = ExtResource("20_readability")
+height_offset = 1.5
+
 [node name="SelectionRing" type="MeshInstance3D" parent="Dummy1"]
 position = Vector3(0, -0.74, 0)
 visible = false
@@ -267,6 +280,10 @@ script = ExtResource("15_combat_actor")
 team = 2
 actor_kind = &"dummy"
 
+[node name="ActorReadability" type="Node3D" parent="Dummy2"]
+script = ExtResource("20_readability")
+height_offset = 1.5
+
 [node name="SelectionRing" type="MeshInstance3D" parent="Dummy2"]
 position = Vector3(0, -0.74, 0)
 visible = false
@@ -293,6 +310,10 @@ attack_damage = 0.0
 script = ExtResource("15_combat_actor")
 team = 2
 actor_kind = &"dummy"
+
+[node name="ActorReadability" type="Node3D" parent="Dummy3"]
+script = ExtResource("20_readability")
+height_offset = 1.5
 
 [node name="SelectionRing" type="MeshInstance3D" parent="Dummy3"]
 position = Vector3(0, -0.74, 0)

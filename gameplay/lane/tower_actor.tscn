@@ -1,8 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://gameplay/lane/tower_actor.gd" id="1_tower"]
 [ext_resource type="Script" path="res://gameplay/stats/actor_stats.gd" id="2_stats"]
 [ext_resource type="Script" path="res://gameplay/combat/combat_actor.gd" id="3_actor"]
+[ext_resource type="Script" path="res://gameplay/combat/basic_attack_controller.gd" id="4_attack"]
+[ext_resource type="Script" path="res://gameplay/combat/actor_readability.gd" id="5_readability"]
 
 [sub_resource type="CylinderMesh" id="TowerMesh"]
 top_radius = 0.85
@@ -31,3 +33,11 @@ script = ExtResource("2_stats")
 script = ExtResource("3_actor")
 team = 1
 actor_kind = &"tower"
+
+[node name="BasicAttackController" type="Node3D" parent="."]
+script = ExtResource("4_attack")
+
+[node name="ActorReadability" type="Node3D" parent="."]
+script = ExtResource("5_readability")
+height_offset = 4.3
+bar_width = 2.0

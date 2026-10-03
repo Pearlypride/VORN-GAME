@@ -61,9 +61,9 @@ func _run() -> void:
 	var melee_target := await _spawn_minion(TeamRules.Team.TEAM_B, MELEE, Vector3(-3.5, 0.55, 2))
 	melee._update_target()
 	_check(melee.target_actor == melee_target._identity, "F: opposing minions acquire one another")
-	melee.attack_cooldown_remaining = 0.0
 	var melee_hp := melee_target._stats.current_health
 	melee._combat_tick(0.1)
+	await create_timer(MELEE.attack_point + 0.05).timeout
 	_check(melee_target._stats.current_health < melee_hp, "G: melee minion attacks in melee range")
 	melee_target.position = Vector3(-30, 0.55, 12)
 
@@ -72,6 +72,7 @@ func _run() -> void:
 	ranged._update_target()
 	var ranged_hp := ranged_target._stats.current_health
 	ranged._combat_tick(0.1)
+	await create_timer(RANGED.attack_point + 0.55).timeout
 	_check(ranged.target_actor == ranged_target._identity and ranged_target._stats.current_health < ranged_hp, "H: ranged minion attacks from longer range")
 	ranged_target.position = Vector3(-31, 0.55, 12)
 
@@ -88,6 +89,7 @@ func _run() -> void:
 	lane_winner.position = lane.team_b_tower.global_position + Vector3(-1.5, 0.55, 0.0)
 	var enemy_tower_health := lane.team_b_tower._stats.current_health
 	lane_winner._combat_tick(0.1)
+	await create_timer(MELEE.attack_point + 0.1).timeout
 	_check(lane.team_b_tower._stats.current_health < enemy_tower_health, "J: minion basic attack damages enemy tower")
 
 	var gold_target := await _spawn_minion(TeamRules.Team.TEAM_B, MELEE, Vector3(-4, 0.55, -3))
@@ -98,6 +100,7 @@ func _run() -> void:
 	player_stats.attack_cooldown = 0.1
 	player.attack_target(gold_target)
 	(player.get_node("Combat") as CombatComponent)._physics_process(0.01)
+	await create_timer(0.9).timeout
 	_check(wallet.current_gold == gold_before + roundi(MELEE.gold_bounty), "K: hero basic last hit awards minion gold")
 	var no_gold_target := await _spawn_minion(TeamRules.Team.TEAM_B, MELEE, Vector3(-4, 0.55, -4))
 	no_gold_target._stats.apply_damage(99999.0, dummies[0], &"basic")
@@ -156,6 +159,7 @@ func _run() -> void:
 	var player_combat := player.get_node("Combat") as CombatComponent
 	player_combat.cooldown_remaining = 0.0
 	player_combat._physics_process(0.01)
+	await create_timer(0.35).timeout
 	_check(hunter.aggro_target == player_identity and hunter.aggro_remaining > 0.0, "S: hero basic attack draws nearby enemy minion aggro")
 	aggro_tower._acquire_target()
 	_check(aggro_tower.target_actor == player_identity, "S: in-range enemy tower temporarily prioritizes attacking hero")
@@ -177,8 +181,9 @@ func _run() -> void:
 	tower._acquire_target()
 	_check(tower.target_actor == hostile_near_tower._identity, "T: tower prioritizes hostile minion in range")
 	var hostile_tower_hp := hostile_near_tower._stats.current_health
-	tower._attack_left = 0.0
+	tower.get_node("BasicAttackController").set_interval_remaining(0.0)
 	tower._physics_process(0.01)
+	await create_timer(tower.attack_point + 0.5).timeout
 	_check(hostile_near_tower._stats.current_health < hostile_tower_hp, "T: tower attacks hostile minion")
 	tower.target_actor = null
 	tower._acquire_target()

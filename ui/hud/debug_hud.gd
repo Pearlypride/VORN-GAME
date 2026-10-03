@@ -2,6 +2,7 @@ extends CanvasLayer
 
 @onready var _player_stats: ActorStats = get_node("../Player/Stats") as ActorStats
 @onready var _combat: CombatComponent = get_node("../Player/Combat") as CombatComponent
+@onready var _attacks: BasicAttackController = get_node("../Player/BasicAttackController") as BasicAttackController
 @onready var _player: PlayerController = get_node("../Player") as PlayerController
 @onready var _abilities: AbilityController = get_node("../Player/AbilityController") as AbilityController
 @onready var _status_effects: StatusEffectController = get_node("../Player/StatusEffects") as StatusEffectController
@@ -45,10 +46,10 @@ func _process(_delta: float) -> void:
 		_target_label.text = "Target HP: %d / %d" % [roundi(target_stats.current_health), roundi(target_stats.max_health)]
 	elif _combat.target != null:
 		_target_label.text = "Target: defeated (respawning)"
-	if _combat.cooldown_remaining > 0.0:
-		_combat_label.text = "Attack cooldown: %.1fs" % _combat.cooldown_remaining
-	else:
-		_combat_label.text = "Attack: ready"
+	var attack_state := _attacks.get_attack_state_name()
+	var attack_wait := _attacks.get_time_until_next_attack()
+	var attack_target: String = _attacks.current_target.actor.name if is_instance_valid(_attacks.current_target) else "—"
+	_combat_label.text = "Attack: %s %d%% → %s · next %.1fs" % [attack_state, roundi(_attacks.get_attack_point_progress() * 100.0), attack_target, attack_wait] if attack_wait > 0.0 else "Attack: IDLE · ready"
 	_update_ability_labels()
 	if _abilities.is_targeting():
 		var definition := _abilities.get_ability_definition(_abilities.current_targeting_ability)
@@ -74,7 +75,8 @@ func _refresh_target(target: Node3D) -> void:
 		_selection_label.text = "Selected: None"
 		_target_label.text = "Target HP: —"
 		return
-	var target_type := "Enemy" if target.is_in_group("combat_target") else "Actor"
+	var identity := target.get_node_or_null("CombatActor") as CombatActor
+	var target_type := String(identity.actor_kind).capitalize() if identity != null else "Actor"
 	_selection_label.text = "Selected: %s (%s)" % [target.name, target_type]
 	var stats: ActorStats = _combat.get_target_stats()
 	_target_label.text = "Target HP: %d / %d" % [roundi(stats.current_health), roundi(stats.max_health)]

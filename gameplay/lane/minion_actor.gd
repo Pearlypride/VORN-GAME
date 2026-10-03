@@ -16,16 +16,17 @@ var path_distance: float = 0.0
 var target_actor: CombatActor
 var aggro_target: CombatActor
 var aggro_remaining: float = 0.0
-var attack_cooldown_remaining: float = 0.0
 var _stats: ActorStats
 var _identity: CombatActor
 var _roster: LaneCombatRoster
+var _attacks: BasicAttackController
 var _scan_timer: float = 0.0
 var _death_handled: bool = false
 
 func _ready() -> void:
 	_stats = $Stats as ActorStats
 	_identity = $CombatActor as CombatActor
+	_attacks = $BasicAttackController as BasicAttackController
 	_roster = get_tree().get_first_node_in_group("lane_combat_roster") as LaneCombatRoster
 	path_distance = initial_path_distance
 	if definition != null:
@@ -35,6 +36,8 @@ func _ready() -> void:
 		_stats.attack_damage = definition.attack_damage
 		_stats.attack_range = definition.attack_range
 		_stats.attack_cooldown = definition.attack_cooldown
+		var attack_mode := BasicAttackController.AttackType.RANGED if definition.minion_type == MinionDefinition.MinionType.RANGED else BasicAttackController.AttackType.MELEE
+		_attacks.configure(attack_mode, definition.attack_point, definition.recovery_duration, definition.projectile_speed)
 		$Visual.material_override = StandardMaterial3D.new()
 		var faction_color := Color(0.14, 0.42, 0.92) if team == TeamRules.Team.TEAM_A else Color(0.9, 0.22, 0.16)
 		faction_color = faction_color.lerp(definition.tint, 0.15)
@@ -65,7 +68,6 @@ func set_hero_aggro(attacker: CombatActor) -> void:
 func _physics_process(delta: float) -> void:
 	if state == State.DEAD:
 		return
-	attack_cooldown_remaining = maxf(0.0, attack_cooldown_remaining - delta)
 	aggro_remaining = maxf(0.0, aggro_remaining - delta)
 	if (aggro_remaining <= 0.0 or not is_instance_valid(aggro_target) or not aggro_target.is_alive()):
 		if is_instance_valid(aggro_target) and target_actor == aggro_target:
@@ -85,8 +87,11 @@ func _physics_process(delta: float) -> void:
 		_advance(delta)
 
 func _update_target() -> void:
+	var previous_target := target_actor
 	if aggro_remaining > 0.0 and is_instance_valid(aggro_target) and _identity.can_damage(aggro_target):
 		target_actor = aggro_target
+		if previous_target != target_actor:
+			_attacks.cancel_windup()
 		state = State.COMBAT
 		return
 	var candidates: Array[CombatActor] = _roster.query_nearby(global_position, acquisition_range) if _roster != null else []
@@ -105,6 +110,8 @@ func _update_target() -> void:
 			best_priority = priority
 			best_distance = distance
 	target_actor = best
+	if previous_target != target_actor:
+		_attacks.cancel_windup()
 	state = State.COMBAT if target_actor != null else State.ADVANCE
 
 func _target_priority(candidate: CombatActor) -> int:
@@ -118,19 +125,20 @@ func _target_priority(candidate: CombatActor) -> int:
 
 func _combat_tick(delta: float) -> void:
 	if not _identity.can_damage(target_actor):
+		_attacks.cancel_windup()
 		target_actor = null
 		return
 	var offset := target_actor.world_position() - global_position
 	offset.y = 0.0
 	var distance := offset.length()
 	if distance > _stats.attack_range:
+		_attacks.cancel_windup()
 		var direction := offset.normalized()
 		velocity.x = direction.x * _stats.movement_speed
 		velocity.z = direction.z * _stats.movement_speed
 		move_and_slide()
-	elif attack_cooldown_remaining <= 0.0:
-		target_actor.receive_damage(_stats.attack_damage, self, &"basic")
-		attack_cooldown_remaining = _stats.attack_cooldown
+	else:
+		_attacks.try_attack(target_actor.actor)
 
 func _advance(delta: float) -> void:
 	if lane_path == null:
@@ -152,6 +160,7 @@ func _on_died() -> void:
 	_death_handled = true
 	state = State.DEAD
 	target_actor = null
+	_attacks.stop_attacking()
 	aggro_target = null
 	velocity = Vector3.ZERO
 	set_physics_process(false)

@@ -10,4 +10,4 @@ func execute(context: AbilityCastContext) -> void:
 	var caster_actor := context.caster.get_node_or_null("CombatActor") as CombatActor
 	var target_actor := context.target.get_node_or_null("CombatActor") as CombatActor
 	if stats != null and stats.current_health > 0.0 and caster_actor != null and target_actor != null and caster_actor.is_hostile_to(target_actor):
-		stats.apply_damage(damage, context.caster, &"ability")
+		stats.apply_damage(damage, context.caster, DamageEvent.ABILITY)

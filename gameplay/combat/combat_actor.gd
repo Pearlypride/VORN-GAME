@@ -35,6 +35,6 @@ func is_hostile_to(other: CombatActor) -> bool:
 func can_damage(other: CombatActor) -> bool:
 	return is_alive() and other != null and other.is_alive() and is_hostile_to(other)
 
-func receive_damage(amount: float, source: Node3D, category: StringName = &"basic") -> void:
+func receive_damage(amount: float, source: Node3D, category: StringName = DamageEvent.BASIC_ATTACK) -> void:
 	if is_alive():
 		stats.apply_damage(amount, source, category)
