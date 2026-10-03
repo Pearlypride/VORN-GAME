@@ -5,6 +5,7 @@ extends Node
 signal health_changed(current: float, maximum: float)
 signal mana_changed(current: float, maximum: float)
 signal died
+signal damage_received(amount: float, source: Node3D, category: StringName, killed: bool)
 
 @export_range(1.0, 10000.0, 1.0) var max_health: float = 100.0
 @export_range(0.0, 10000.0, 1.0) var max_mana: float = 0.0
@@ -17,6 +18,8 @@ signal died
 
 var current_health: float
 var current_mana: float
+var last_damage_source: Node3D
+var last_damage_category: StringName = &""
 var _movement_speed_multiplier: float = 1.0
 var _attack_cooldown_multiplier: float = 1.0
 
@@ -53,11 +56,14 @@ func configure_from_hero(definition: HeroDefinition) -> void:
 	_attack_cooldown_multiplier = 1.0
 	restore_full_resources()
 
-func apply_damage(amount: float) -> void:
+func apply_damage(amount: float, source: Node3D = null, category: StringName = &"basic") -> void:
 	if current_health <= 0.0 or amount <= 0.0:
 		return
+	last_damage_source = source
+	last_damage_category = category
 	current_health = maxf(0.0, current_health - amount)
 	health_changed.emit(current_health, max_health)
+	damage_received.emit(amount, source, category, current_health == 0.0)
 	if current_health == 0.0:
 		died.emit()
 
@@ -83,6 +89,18 @@ func restore_mana(amount: float) -> float:
 func restore_full_resources() -> void:
 	current_health = max_health
 	current_mana = max_mana
+	health_changed.emit(current_health, max_health)
+	mana_changed.emit(current_mana, max_mana)
+
+func apply_level_growth(health: float, mana: float, damage: float, health_regen: float = 0.0, mana_regen: float = 0.0) -> void:
+	# Preserve current absolute HP/mana; growth increases maxima without a level-up heal.
+	max_health += health
+	max_mana += mana
+	attack_damage += damage
+	health_regeneration += health_regen
+	mana_regeneration += mana_regen
+	current_health = minf(current_health, max_health)
+	current_mana = minf(current_mana, max_mana)
 	health_changed.emit(current_health, max_health)
 	mana_changed.emit(current_mana, max_mana)
 

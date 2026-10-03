@@ -5,6 +5,9 @@ extends CanvasLayer
 @onready var _player: PlayerController = get_node("../Player") as PlayerController
 @onready var _abilities: AbilityController = get_node("../Player/AbilityController") as AbilityController
 @onready var _status_effects: StatusEffectController = get_node("../Player/StatusEffects") as StatusEffectController
+@onready var _wallet: GoldWallet = get_node("../Player/GoldWallet") as GoldWallet
+@onready var _progression: HeroProgression = get_node("../Player/Progression") as HeroProgression
+@onready var _lane_world: LaneWorld = get_node("../LaneWorld") as LaneWorld
 @onready var _player_label: Label = $Panel/Margin/VBox/PlayerHealth
 @onready var _mana_label: Label = $Panel/Margin/VBox/PlayerMana
 @onready var _selection_label: Label = $Panel/Margin/VBox/Selection
@@ -13,6 +16,10 @@ extends CanvasLayer
 @onready var _combat_label: Label = $Panel/Margin/VBox/CombatState
 @onready var _targeting_label: Label = $Panel/Margin/VBox/TargetingMode
 @onready var _buff_label: Label = $Panel/Margin/VBox/RBuff
+@onready var _economy_label: Label = $Panel/Margin/VBox/Economy
+@onready var _progression_label: Label = $Panel/Margin/VBox/Progression
+@onready var _lane_label: Label = $Panel/Margin/VBox/LaneStatus
+@onready var _tower_label: Label = $Panel/Margin/VBox/TowerStatus
 @onready var _ability_labels: Dictionary = {
 	&"q": $Panel/Margin/VBox/AbilityQ,
 	&"w": $Panel/Margin/VBox/AbilityW,
@@ -50,6 +57,10 @@ func _process(_delta: float) -> void:
 		_targeting_label.text = "Targeting: None"
 	var buff_remaining := _status_effects.get_remaining(&"r_surge")
 	_buff_label.text = "R buff: %.1fs" % buff_remaining if buff_remaining > 0.0 else "R buff: inactive"
+	_economy_label.text = "Gold: %d (earned %d)" % [_wallet.current_gold, _wallet.total_earned]
+	_progression_label.text = "Level %d — XP %.0f / %.0f" % [_progression.level, _progression.current_xp, _progression.xp_required()]
+	_lane_label.text = "Waves A/B: %d / %d" % [_lane_world.team_a_spawner.wave_number, _lane_world.team_b_spawner.wave_number]
+	_tower_label.text = "Towers A/B: %s / %s" % [_tower_hp(_lane_world.team_a_tower), _tower_hp(_lane_world.team_b_tower)]
 
 func _on_player_health_changed(current: float, maximum: float) -> void:
 	var hero_name := _player.hero_definition.hero_name if _player.hero_definition != null else "Hero"
@@ -87,3 +98,9 @@ func _update_ability_labels() -> void:
 		elif _player_stats.current_mana < definition.mana_cost:
 			state_name = "NO MANA"
 		_ability_labels[ability_id].text = "%s — %s: %s (%.0f mana)" % [String(ability_id).to_upper(), definition.display_name, state_name, definition.mana_cost]
+
+func _tower_hp(tower: TowerActor) -> String:
+	if tower == null or tower.destroyed:
+		return "DESTROYED"
+	var stats := tower.get_node("Stats") as ActorStats
+	return "%d" % roundi(stats.current_health)

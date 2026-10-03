@@ -2,13 +2,15 @@
 
 ## Current scene
 
-`world/maps/dev_arena.tscn` is the configured main scene. It contains a flat lit arena, independent fixed-pitch MOBA camera rig, a `Player` (`CharacterBody3D`) configured by `VORN_TEST_HERO`, three independent target dummies, desktop input, selection and ability targeting feedback, a single reusable move marker, primitive projectile, and debug HUD. All visuals use Godot primitives and standard materials.
+`world/maps/dev_arena.tscn` is the configured main scene. It contains a fixed-pitch MOBA camera, `VORN_TEST_HERO`, a one-lane `LaneWorld`, two towers, two wave spawners, three legacy development dummies, desktop input, primitive feedback, and a debug HUD. All visuals use primitives and standard materials.
 
 Code is grouped by responsibility:
 
 - `gameplay/actors/`: player movement and hero lifecycle
 - `gameplay/stats/`: reusable health, mana, regen, and combat stats
 - `gameplay/combat/`: basic attack target/range/cooldown rules
+- `gameplay/lane/`: lane path, minion definitions/AI, wave spawners, tower behavior, and lane setup
+- `gameplay/economy/` and `gameplay/progression/`: last-hit wallet and proximity XP/levels
 - `gameplay/heroes/`: hero base-stat and ability-list resource
 - `gameplay/abilities/`: cast definitions, per-hero runtime cooldowns, effects, and projectile
 - `gameplay/status/`: minimal timed stat modifiers, currently used by R
@@ -23,6 +25,8 @@ Code is grouped by responsibility:
 `HeroDefinition` supplies configurable base stats and ability definitions. `PlayerController` applies the hero data during startup; the definition is data rather than runtime state. Dummies each own an independent `ActorStats` node and handle only their own death presentation and respawn. No dummy contains player-specific logic.
 
 `CombatComponent` owns basic attack target validation, range checks, cooldown, and stat-based damage. It rejects dead/invalid targets and stops attacking when either actor dies. Ability damage is applied through `ActorStats.apply_damage()` by separate effect resources; ability code does not read mouse or keyboard events.
+
+`CombatActor` composes team identity, actor kind, alive state, hostility checks, and damage receipt onto a unit without requiring a shared gameplay inheritance tree. `TeamRules` is the central hostility policy. `LaneCombatRoster` caches registered combat actors and answers bounded-radius queries for minion/tower AI and area effects. Damage carries source actor and category through `ActorStats`; minion death uses the last source for gold and attack aggro.
 
 `PlayerController` retains the Phase 2 semantic `move_to`, `attack_target`, `stop_command`, and `clear_command` operations. Ground steering and attack pursuit remain separate from desktop mouse picking.
 
@@ -40,11 +44,17 @@ The debug HUD reads state and formats it. It does not choose targets, apply dama
 
 `HeroLifecycle` listens for hero death, clears commands, basic attack target, ability targeting and modifiers, disables collision and hides the primitive, then respawns after a development delay. Respawn restores health and mana to their configured maxima at the original spawn. Regeneration pauses while dead; ability cooldowns continue ticking during the respawn wait.
 
+## Lane systems
+
+`LaneWorld` lays out one straight lane, constructs the shared roster/path, and owns one synchronized spawner and one tower per team. `LanePath` is a deterministic coordinate path; minions store progress from their home side. It can be replaced with a curve or navigation query behind the lane path API. Minions use cached roster queries on a timer, choose nearest targets by minion → hero → tower priority, and return to advance when combat ends. Hero basic attacks can briefly redirect nearby hostile minions; ability aggro is not implemented.
+
+The player receives gold only when it is the final damage source for a hostile minion. XP is granted to living hostile heroes inside the minion's configured XP radius, regardless of last hit. Levels 1–6 use a linear configurable threshold. Level growth adds configured maxima and damage while preserving absolute current HP/mana, capped by the new maxima. Towers are stationary, target minions before heroes, and temporarily prioritize an enemy hero that damages a friendly hero inside tower range. See [LANE_SYSTEM.md](LANE_SYSTEM.md) for the complete Phase 4 rules and limits.
+
 ## Camera and movement replacement path
 
 The orthographic MOBA camera is independent of the player, has fixed pitch, middle-mouse drag pan, and wheel zoom with exported pan speed and zoom limits. Desktop input controls only the camera rig.
 
-Ground movement uses direct steering in this unobstructed test arena. Obstacle-aware pathfinding is intentionally deferred. `PlayerController.move_to()` is the command boundary; a future movement implementation can replace destination steering with `NavigationAgent3D` path queries without changing semantic commands, targeting, or combat range rules.
+Hero ground movement and minion lane advance use direct steering. Obstacle-aware pathfinding is intentionally deferred. Hero move commands remain behind `PlayerController.move_to()`, and minion location progression is behind `LanePath`; a `NavigationAgent3D` or curve-backed path layer can replace these movement calculations without changing command, combat, or reward rules.
 
 ## Mobile and server-authority extension
 
@@ -54,4 +64,4 @@ This project is local-only. A future server-authoritative simulation can receive
 
 ## Not implemented
 
-This phase does not include final hero content, leveling, items, inventory, minions, towers, lanes, jungle, fog of war, wards, multiplayer/networking, backend, matchmaking, MMR, accounts, shop, production UI/art, animation, sound, or monetization. There is no armor or generalized damage-type system. Obstacle navigation remains deferred.
+This prototype has one lane only. It does not include neutral jungle units, extra lanes, base structures, tower hero-aggro, tower armor, ability aggro, shop/items, fog of war, networking, production UI/art, animations, sound, or monetization. There is no generalized damage type or server authority yet. Scaling beyond small development waves needs profiling and possibly a spatial index; the current roster scans its cached actor list for bounded-radius queries.

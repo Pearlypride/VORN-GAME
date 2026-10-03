@@ -138,7 +138,9 @@ func _is_valid_enemy(target: Node3D) -> bool:
 	if target == null or not is_instance_valid(target) or not target.is_inside_tree() or not target.is_in_group("combat_target"):
 		return false
 	var target_stats := target.get_node_or_null("Stats") as ActorStats
-	return target_stats != null and target_stats.current_health > 0.0
+	var caster_actor := _caster.get_node_or_null("CombatActor") as CombatActor
+	var target_actor := target.get_node_or_null("CombatActor") as CombatActor
+	return target_stats != null and target_stats.current_health > 0.0 and caster_actor != null and target_actor != null and caster_actor.is_hostile_to(target_actor)
 
 func _flat_distance(first: Vector3, second: Vector3) -> float:
 	return Vector2(first.x - second.x, first.z - second.z).length()

@@ -17,7 +17,7 @@ func execute(context: AbilityCastContext) -> void:
 	var projectile := projectile_scene.instantiate() as AbilityProjectile
 	if projectile == null:
 		return
-	projectile.configure(direction.normalized(), context.definition.cast_range, damage)
+	projectile.configure(direction.normalized(), context.definition.cast_range, damage, context.caster)
 	var tree := context.caster.get_tree()
 	var projectile_parent: Node = tree.current_scene if tree.current_scene != null else tree.root
 	projectile_parent.add_child(projectile)

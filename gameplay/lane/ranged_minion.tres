@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MinionDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://gameplay/lane/minion_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Ranged Minion"
+minion_type = 1
+max_health = 300.0
+movement_speed = 2.4
+attack_damage = 28.0
+attack_range = 6.5
+attack_cooldown = 1.6
+gold_bounty = 28.0
+xp_reward = 40.0
+tint = Color(0.32, 0.82, 0.72, 1)

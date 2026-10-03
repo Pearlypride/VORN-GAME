@@ -1,0 +1,33 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://gameplay/lane/tower_actor.gd" id="1_tower"]
+[ext_resource type="Script" path="res://gameplay/stats/actor_stats.gd" id="2_stats"]
+[ext_resource type="Script" path="res://gameplay/combat/combat_actor.gd" id="3_actor"]
+
+[sub_resource type="CylinderMesh" id="TowerMesh"]
+top_radius = 0.85
+bottom_radius = 1.2
+height = 4.0
+
+[sub_resource type="CylinderShape3D" id="TowerShape"]
+radius = 1.0
+height = 4.0
+
+[node name="Tower" type="StaticBody3D" groups=["tower"]]
+script = ExtResource("1_tower")
+
+[node name="Visual" type="MeshInstance3D" parent="."]
+position = Vector3(0, 2, 0)
+mesh = SubResource("TowerMesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 2, 0)
+shape = SubResource("TowerShape")
+
+[node name="Stats" type="Node" parent="."]
+script = ExtResource("2_stats")
+
+[node name="CombatActor" type="Node" parent="."]
+script = ExtResource("3_actor")
+team = 1
+actor_kind = &"tower"
