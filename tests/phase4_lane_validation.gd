@@ -183,7 +183,11 @@ func _run() -> void:
 	var hostile_tower_hp := hostile_near_tower._stats.current_health
 	tower.get_node("BasicAttackController").set_interval_remaining(0.0)
 	tower._physics_process(0.01)
-	await create_timer(tower.attack_point + 0.5).timeout
+	# The Phase 6 tuning pass intentionally slowed tower projectiles for readability.
+	# Allow the current target distance and configured projectile speed to resolve.
+	var tower_shot_distance := Vector2(tower.global_position.x - hostile_near_tower.global_position.x, tower.global_position.z - hostile_near_tower.global_position.z).length()
+	var tower_travel_time := tower_shot_distance / maxf(0.1, tower.projectile_speed)
+	await create_timer(tower.attack_point + tower_travel_time + 0.2).timeout
 	_check(hostile_near_tower._stats.current_health < hostile_tower_hp, "T: tower attacks hostile minion")
 	tower.target_actor = null
 	tower._acquire_target()

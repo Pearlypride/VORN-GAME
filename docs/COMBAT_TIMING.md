@@ -9,7 +9,7 @@ Heroes, melee minions, ranged minions, and towers use `BasicAttackController`; t
 3. `RELEASE`: the melee hit is applied or a ranged projectile is created.
 4. `RECOVERY`: the backswing completes; the controller becomes idle when recovery and the full attack interval have elapsed.
 
-Attack interval comes from `ActorStats.attack_cooldown`; attack point, recovery, type, and projectile speed are configurable on the hero/minion/tower data or actor. Range remains `ActorStats.attack_range`. Values in this sandbox are for functional testing rather than balance.
+Attack interval comes from `ActorStats.attack_cooldown`; attack point, recovery, type, and projectile speed are configurable on the hero/minion/tower data or actor. Range remains `ActorStats.attack_range`. Current hero prototype: 25 damage, 2.35 range, 0.78 s interval, 0.24 s attack point, 0.22 s recovery. These are a first tuning pass for deliberate, readable timing, not final balance. Current minion/tower values live in their definitions and lane resources.
 
 ## Cancellation and validation
 
@@ -28,6 +28,10 @@ Damage metadata is `DamageEvent`: source, target, amount, category, and lethal f
 ## Attack speed
 
 `StatusEffectController` exposes attack-speed changes as an attack-cooldown multiplier on `ActorStats`; the basic attack controller does not know about R. At swing start, it snapshots the ratio between effective and base interval. That ratio scales the current swing's attack point and recovery and sets its full interval. An R expiry during a swing does not reshape timing mid-swing; the next swing uses the updated stats. Durations are clamped to valid nonnegative values, and attack point remains shorter than the interval.
+
+## Presentation integration
+
+The controller emits local `attack_started`, `attack_released`, and `attack_finished` signals alongside phase changes. `ActorPresentation` mirrors windup, release, and recovery for primitive motion. The visual strike may later be driven by clips, but release and damage continue to come from this controller; see [PRESENTATION.md](PRESENTATION.md).
 
 ## Feedback and limits
 

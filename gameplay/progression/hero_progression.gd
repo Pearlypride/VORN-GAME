@@ -2,6 +2,7 @@ class_name HeroProgression
 extends Node
 
 signal progression_changed(level: int, current_xp: float, required_xp: float)
+signal level_up(new_level: int)
 
 @export var hero_definition: HeroDefinition
 @export_range(0.0, 100.0, 0.5) var xp_radius: float = 10.0
@@ -26,6 +27,7 @@ func grant_xp(amount: float) -> void:
 		level += 1
 		if hero_definition != null:
 			_stats.apply_level_growth(hero_definition.health_per_level, hero_definition.mana_per_level, hero_definition.attack_damage_per_level, hero_definition.health_regeneration_per_level, hero_definition.mana_regeneration_per_level)
+		level_up.emit(level)
 	progression_changed.emit(level, current_xp, xp_required())
 
 func is_in_xp_range(position: Vector3) -> bool:

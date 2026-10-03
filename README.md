@@ -16,13 +16,14 @@ For a headless project parse/import check:
 godot --headless --path . --editor --quit
 ```
 
-Run the automated Phase 2, Phase 3, and Phase 4 checks with:
+Run the automated Phase 2–6 checks with:
 
 ```sh
 godot --headless --path . --script res://tests/phase2_validation.gd
 godot --headless --path . --script res://tests/phase3_ability_validation.gd
 godot --headless --path . --script res://tests/phase4_lane_validation.gd
 godot --headless --path . --script res://tests/phase5_combat_validation.gd
+godot --headless --path . --script res://tests/phase6_presentation_validation.gd
 ```
 
 ## Controls
@@ -56,6 +57,6 @@ godot --headless --path . --script res://tests/phase5_combat_validation.gd
 - Shared IDLE/WINDUP/RELEASE/RECOVERY basic-attack lifecycle for the hero, melee/ranged minions, and towers
 - Tracking primitive projectiles for ranged hero attacks, ranged minions, and towers; damage and last-hit credit resolve on impact
 - World-space health bars and brief floating damage numbers for readable combat feedback
-- Debug HUD for HP/mana, attack phase/progress/target, command state, selected target, Q/W/E/R, waves, tower HP, economy and progression
+- Primitive hero/minion/tower presentation, semantic presentation states, hit/death/respawn/level feedback, and grouped development HUD with local playtest telemetry
 
-Movement uses direct steering/basic range checks in this simple lane. Obstacle-aware navigation is intentionally deferred. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ABILITIES.md](docs/ABILITIES.md), [docs/LANE_SYSTEM.md](docs/LANE_SYSTEM.md), and [docs/COMBAT_TIMING.md](docs/COMBAT_TIMING.md) for system details and simplifications.
+Movement uses direct steering/basic range checks in this simple lane. Obstacle-aware navigation is intentionally deferred. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ABILITIES.md](docs/ABILITIES.md), [docs/LANE_SYSTEM.md](docs/LANE_SYSTEM.md), [docs/COMBAT_TIMING.md](docs/COMBAT_TIMING.md), [docs/PRESENTATION.md](docs/PRESENTATION.md), and [docs/PLAYTEST.md](docs/PLAYTEST.md) for system details, presentation contracts, and the graphical playtest checklist.

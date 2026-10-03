@@ -8,6 +8,7 @@ extends CanvasLayer
 @onready var _status_effects: StatusEffectController = get_node("../Player/StatusEffects") as StatusEffectController
 @onready var _wallet: GoldWallet = get_node("../Player/GoldWallet") as GoldWallet
 @onready var _progression: HeroProgression = get_node("../Player/Progression") as HeroProgression
+@onready var _telemetry: PlaytestTelemetry = get_node("../Player/PlaytestTelemetry") as PlaytestTelemetry
 @onready var _lane_world: LaneWorld = get_node("../LaneWorld") as LaneWorld
 @onready var _player_label: Label = $Panel/Margin/VBox/PlayerHealth
 @onready var _mana_label: Label = $Panel/Margin/VBox/PlayerMana
@@ -21,6 +22,7 @@ extends CanvasLayer
 @onready var _progression_label: Label = $Panel/Margin/VBox/Progression
 @onready var _lane_label: Label = $Panel/Margin/VBox/LaneStatus
 @onready var _tower_label: Label = $Panel/Margin/VBox/TowerStatus
+@onready var _telemetry_label: Label = $Panel/Margin/VBox/Telemetry
 @onready var _ability_labels: Dictionary = {
 	&"q": $Panel/Margin/VBox/AbilityQ,
 	&"w": $Panel/Margin/VBox/AbilityW,
@@ -62,6 +64,7 @@ func _process(_delta: float) -> void:
 	_progression_label.text = "Level %d — XP %.0f / %.0f" % [_progression.level, _progression.current_xp, _progression.xp_required()]
 	_lane_label.text = "Waves A/B: %d / %d" % [_lane_world.team_a_spawner.wave_number, _lane_world.team_b_spawner.wave_number]
 	_tower_label.text = "Towers A/B: %s / %s" % [_tower_hp(_lane_world.team_a_tower), _tower_hp(_lane_world.team_b_tower)]
+	_telemetry_label.text = _telemetry.get_summary()
 
 func _on_player_health_changed(current: float, maximum: float) -> void:
 	var hero_name := _player.hero_definition.hero_name if _player.hero_definition != null else "Hero"

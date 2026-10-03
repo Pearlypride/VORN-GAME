@@ -2,6 +2,10 @@ class_name ActorReadability
 extends Node3D
 ## Minimal world-space health bar and transient damage number presentation.
 
+const TEAM_A_BAR_MATERIAL: Material = preload("res://gameplay/presentation/materials/healthbar_team_a.tres")
+const TEAM_B_BAR_MATERIAL: Material = preload("res://gameplay/presentation/materials/healthbar_team_b.tres")
+const BACKGROUND_MATERIAL: Material = preload("res://gameplay/presentation/materials/healthbar_background.tres")
+
 @export var stats_path: NodePath = ^"../Stats"
 @export var bar_width: float = 1.2
 @export var height_offset: float = 2.0
@@ -27,24 +31,22 @@ func _build_bar() -> void:
 	var back_mesh := BoxMesh.new()
 	back_mesh.size = Vector3(bar_width, 0.11, 0.06)
 	back.mesh = back_mesh
-	var back_material := StandardMaterial3D.new()
-	back_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	back_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	back_material.albedo_color = Color(0.08, 0.08, 0.1, 0.9)
-	back.material_override = back_material
+	back.material_override = BACKGROUND_MATERIAL
 	_bar_root.add_child(back)
 	_fill = MeshInstance3D.new()
 	_fill.name = "HealthFill"
 	var fill_mesh := BoxMesh.new()
 	fill_mesh.size = Vector3(bar_width, 0.075, 0.075)
 	_fill.mesh = fill_mesh
-	var fill_material := StandardMaterial3D.new()
-	fill_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	fill_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 	var identity := get_parent().get_node_or_null("CombatActor") as CombatActor
-	fill_material.albedo_color = Color(0.2, 0.78, 1.0) if identity != null and identity.team == TeamRules.Team.TEAM_A else Color(1.0, 0.28, 0.2)
-	_fill.material_override = fill_material
+	_fill.material_override = TEAM_A_BAR_MATERIAL if identity != null and identity.team == TeamRules.Team.TEAM_A else TEAM_B_BAR_MATERIAL
 	_bar_root.add_child(_fill)
+	if identity != null:
+		configure_team(identity.team)
+
+func configure_team(team: TeamRules.Team) -> void:
+	if _fill != null:
+		_fill.material_override = TEAM_A_BAR_MATERIAL if team == TeamRules.Team.TEAM_A else TEAM_B_BAR_MATERIAL
 
 func _on_health_changed(current: float, maximum: float) -> void:
 	if _fill == null:

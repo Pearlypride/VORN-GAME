@@ -104,6 +104,13 @@ func get_ability_ids() -> Array[StringName]:
 func is_targeting() -> bool:
 	return current_targeting_ability != &""
 
+func is_valid_enemy_target(target: Node3D, ability_id: StringName = &"") -> bool:
+	if not _is_valid_enemy(target):
+		return false
+	var selected_id := ability_id if ability_id != &"" else current_targeting_ability
+	var definition := get_ability_definition(selected_id)
+	return definition != null and _flat_distance(_caster.global_position, target.global_position) <= definition.cast_range
+
 func _get_targeting_runtime() -> Dictionary:
 	if not is_targeting() or not _runtime.has(current_targeting_ability):
 		return {}

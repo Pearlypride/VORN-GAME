@@ -10,13 +10,13 @@ This describes VORN's single-lane development prototype. Rules and timings are t
 
 `LaneWorld` creates one straight lane, one tower per side, and one spawner per team. `LanePath` maps scalar home-to-enemy progress to a world position. It can later be replaced by a `Path3D`, waypoints, or a navigation query without changing combat or wave code. Hero destination steering is also intentionally direct; obstacle-aware navigation is deferred.
 
-Each wave defaults to three melee minions and one ranged minion. Definitions configure health, speed, damage, range, attack interval, attack point, recovery, projectile speed, bounty, XP, and tint. Minions transition among `ADVANCE`, `COMBAT`, and `DEAD`. They advance on the lane, periodically query the cached roster, pursue a selected target into range, run the shared attack controller, reacquire after target death, and resume advancing when combat ends. Ranged minions' longer range naturally keeps them farther from targets than melee minions. Dead minions stop and are removed after a short delay.
+Each wave defaults to three melee minions and one ranged minion. `lane_prototype.tres` configures wave cadence, spacing, and XP radius; `tower_prototype.tres` configures tower HP/damage/range/timing/projectile speed. Current prototype definitions are deliberately tuneable rather than final balance. The current pass uses hero speed 6, 25 damage, 2.35 range, and 0.78 s interval; melee minions use 480 HP, 2.55 speed, 18 damage, and 1.25 s interval; ranged minions use 300 HP, 2.35 speed, 24 damage, 6 range, and 1.55 s interval; towers use 2000 HP, 82 damage, 11 range, and 1.25 s interval. Definitions configure health, speed, damage, range, attack interval, attack point, recovery, projectile speed, bounty, XP, and tint. Minions transition among `ADVANCE`, `COMBAT`, and `DEAD`. They advance on the lane, periodically query the cached roster, pursue a selected target into range, run the shared attack controller, reacquire after target death, and resume advancing when combat ends. Ranged minions' longer range naturally keeps them farther from targets than melee minions. Dead minions stop and are removed after a short delay.
 
 Selection priority is nearest hostile minion, then hero, then tower. Temporary hero basic-attack aggro overrides that order. Ties resolve by distance. Changed targets cancel only attacks still in windup; a released attack resolves independently. There is no sophisticated focus logic or lane blocker rule.
 
 ## Waves and aggro
 
-Each side has a `WaveSpawner` with synchronized defaults: two seconds to the first wave, then eighteen-second intervals. Spawn composition and cadence are separate from minion AI.
+Each side has a `WaveSpawner` with synchronized defaults: two seconds to the first wave, then twenty-second intervals, configured by `lane_prototype.tres`. Spawn composition and cadence are separate from minion AI.
 
 When a hero basic attack targets an enemy hero, nearby hostile minions receive a short aggro override. Abilities do not trigger this behavior. Towers target the nearest hostile minion in range before a hero. An enemy hero that basic-attacks a friendly hero inside tower range can temporarily override the tower's normal target.
 
@@ -30,6 +30,10 @@ Each accepted health change creates `DamageEvent` metadata (source, target, amou
 
 Towers are stationary ranged attackers with configurable interval, attack point, recovery, range, and projectile speed. They use the shared attack controller and tracking projectile, maintain minion-first targeting and brief hero aggro, and stop launching attacks when destroyed. Projectiles released before tower destruction continue to their hostile target. There is no armor, backdoor protection, regeneration, fortification, glyph, or base exposure rule.
 
+## Presentation and telemetry
+
+Primitive presentation differentiates hero, melee/ranged minions, and towers while leaving collision shapes unchanged. Team lane markings and directional chevrons improve orientation. Local telemetry reports last-hit proxy count (positive wallet events), average spacing between attack releases, movement speed, wave, gold, and level; missed last hits are not inferred.
+
 ## Feedback and validation
 
 The debug HUD shows attack phase, windup progress, current attack target, time until next attack, target HP, command state, economy, levels, wave count, and tower HP. Heroes, minions, and towers have simple world-space health bars; accepted damage briefly floats a number above the unit. Presentation listens to stats and does not resolve combat.
@@ -41,6 +45,7 @@ godot --headless --path . --script res://tests/phase2_validation.gd
 godot --headless --path . --script res://tests/phase3_ability_validation.gd
 godot --headless --path . --script res://tests/phase4_lane_validation.gd
 godot --headless --path . --script res://tests/phase5_combat_validation.gd
+godot --headless --path . --script res://tests/phase6_presentation_validation.gd
 ```
 
 The test harnesses create units deterministically. Graphical checks remain necessary for attack responsiveness, cancellation feel, minion spacing, projectile speed/readability, last-hit feel, HP bars, and R buff feel.

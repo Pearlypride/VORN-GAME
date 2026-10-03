@@ -1,9 +1,9 @@
 extends Node3D
 ## Fixed-pitch orthographic MOBA camera. Pan and zoom are independent of actors.
 
-@export_range(0.001, 0.2, 0.001) var pan_speed: float = 0.035
-@export_range(2.0, 40.0, 0.5) var zoom_min: float = 12.0
-@export_range(10.0, 80.0, 0.5) var zoom_max: float = 30.0
+@export_range(0.001, 0.2, 0.001) var pan_speed: float = 0.045
+@export_range(2.0, 40.0, 0.5) var zoom_min: float = 16.0
+@export_range(10.0, 80.0, 0.5) var zoom_max: float = 36.0
 @export_range(0.25, 5.0, 0.25) var zoom_step: float = 1.5
 @onready var _camera: Camera3D = $Camera3D as Camera3D
 var _dragging: bool = false

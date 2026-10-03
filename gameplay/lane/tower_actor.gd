@@ -1,6 +1,7 @@
 class_name TowerActor
 extends StaticBody3D
 
+@export var definition: TowerDefinition
 @export var team: TeamRules.Team = TeamRules.Team.TEAM_A
 @export_range(1.0, 100000.0, 1.0) var tower_health: float = 2200.0
 @export_range(0.1, 1000.0, 0.1) var tower_damage: float = 90.0
@@ -27,14 +28,29 @@ func _ready() -> void:
 	_attacks = $BasicAttackController as BasicAttackController
 	_identity.team = team
 	_identity.actor_kind = &"tower"
+	($ActorReadability as ActorReadability).configure_team(team)
 	_stats.max_health = tower_health
-	_stats.current_health = tower_health
+	_stats.restore_full_health()
 	_stats.attack_damage = tower_damage
 	_stats.attack_range = tower_range
 	_stats.attack_cooldown = tower_attack_cooldown
 	_attacks.configure(BasicAttackController.AttackType.RANGED, attack_point, recovery_duration, projectile_speed)
 	_stats.died.connect(_on_died)
 	_roster = get_tree().get_first_node_in_group("lane_combat_roster") as LaneCombatRoster
+	if definition != null:
+		tower_health = definition.max_health
+		tower_damage = definition.attack_damage
+		tower_range = definition.attack_range
+		tower_attack_cooldown = definition.attack_interval
+		attack_point = definition.attack_point
+		recovery_duration = definition.recovery_duration
+		projectile_speed = definition.projectile_speed
+		_stats.max_health = tower_health
+		_stats.restore_full_health()
+		_stats.attack_damage = tower_damage
+		_stats.attack_range = tower_range
+		_stats.attack_cooldown = tower_attack_cooldown
+		_attacks.configure(BasicAttackController.AttackType.RANGED, attack_point, recovery_duration, projectile_speed)
 
 func _physics_process(delta: float) -> void:
 	if destroyed:

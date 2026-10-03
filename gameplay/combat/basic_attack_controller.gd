@@ -6,10 +6,15 @@ enum State { IDLE, WINDUP, RELEASE, RECOVERY }
 enum AttackType { MELEE, RANGED }
 
 signal state_changed(state: int, progress: float, target: Node3D, time_until_next: float)
+signal attack_started(target: Node3D)
 signal attack_released(target: Node3D)
+signal attack_finished(target: Node3D)
 
 const PROJECTILE_SCENE := preload("res://gameplay/combat/basic_attack_projectile.tscn")
 const RELEASE_FEEDBACK_DURATION := 0.08
+const WINDUP_MATERIAL: Material = preload("res://gameplay/presentation/materials/attack_windup.tres")
+const RELEASE_MATERIAL: Material = preload("res://gameplay/presentation/materials/attack_release.tres")
+const RECOVERY_MATERIAL: Material = preload("res://gameplay/presentation/materials/attack_recovery.tres")
 
 @export_range(0.0, 5.0, 0.01) var attack_point: float = 0.28
 @export_range(0.0, 5.0, 0.01) var recovery_duration: float = 0.25
@@ -28,7 +33,6 @@ var _recovery_time: float = 0.0
 var _timing_ratio: float = 1.0
 var _enabled: bool = true
 var _state_marker: MeshInstance3D
-var _marker_material: StandardMaterial3D
 
 func _ready() -> void:
 	_owner_actor = get_parent() as Node3D
@@ -68,6 +72,7 @@ func try_attack(target: Node3D) -> bool:
 	_windup_duration = minf(maxf(0.01, attack_point * _timing_ratio), maxf(0.01, effective_interval - 0.01))
 	_recovery_time = minf(maxf(0.0, recovery_duration * _timing_ratio), maxf(0.0, effective_interval - _windup_duration))
 	_set_state(State.WINDUP)
+	attack_started.emit(target)
 	return true
 
 func cancel_windup() -> bool:
@@ -121,8 +126,10 @@ func _physics_process(delta: float) -> void:
 		_set_state(State.RECOVERY)
 		_phase_elapsed = 0.0
 	elif current_state == State.RECOVERY and _phase_elapsed >= _recovery_time:
+		var finished_target := current_target.actor if is_instance_valid(current_target) else null
 		current_target = null
 		_set_state(State.IDLE)
+		attack_finished.emit(finished_target)
 
 func _release_attack() -> void:
 	var target_node := current_target.actor if is_instance_valid(current_target) else null
@@ -156,8 +163,12 @@ func _owner_is_alive() -> bool:
 	return is_instance_valid(_stats) and _stats.current_health > 0.0 and is_instance_valid(_owner_identity) and _owner_identity.is_alive()
 
 func _on_owner_died() -> void:
-	if current_state == State.WINDUP:
-		cancel_windup()
+	# Death terminates every presentation/attack phase; a recovery ring must not
+	# remain visible while the owner is dead or hidden.
+	current_target = null
+	_interval_remaining = 0.0
+	_phase_elapsed = 0.0
+	_set_state(State.IDLE)
 	_enabled = false
 
 func _on_owner_health_changed(current: float, _maximum: float) -> void:
@@ -185,9 +196,6 @@ func _create_state_marker() -> void:
 	_state_marker.position = Vector3(0.0, 0.035, 0.0)
 	_state_marker.visible = false
 	add_child(_state_marker)
-	_marker_material = StandardMaterial3D.new()
-	_marker_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_state_marker.material_override = _marker_material
 	_update_marker()
 
 func _update_marker() -> void:
@@ -196,11 +204,11 @@ func _update_marker() -> void:
 	_state_marker.visible = current_state != State.IDLE
 	match current_state:
 		State.WINDUP:
-			_marker_material.albedo_color = Color(1.0, 0.72, 0.12)
+			_state_marker.material_override = WINDUP_MATERIAL
 		State.RELEASE:
-			_marker_material.albedo_color = Color(0.25, 1.0, 0.38)
+			_state_marker.material_override = RELEASE_MATERIAL
 		State.RECOVERY:
-			_marker_material.albedo_color = Color(0.3, 0.72, 1.0)
+			_state_marker.material_override = RECOVERY_MATERIAL
 
 func _flat_distance(first: Vector3, second: Vector3) -> float:
 	return Vector2(first.x - second.x, first.z - second.z).length()

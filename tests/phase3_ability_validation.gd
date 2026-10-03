@@ -178,13 +178,17 @@ func _test_death_and_respawn() -> void:
 	_check(stats.current_health == 0.0 and player.command_state == PlayerController.CommandState.IDLE, "hero death clears movement and disables actor")
 	_check(not statuses.has_effect(&"r_surge"), "K: death removes the active R buff")
 	_check(not abilities.is_targeting(), "death clears an active targeting mode")
-	_check(not (player.get_node("Visual") as Node3D).visible, "death hides the hero primitive")
+	var presentation := player.get_node("ActorPresentation") as ActorPresentation
+	_check(presentation.current_state == ActorPresentation.VisualState.DEATH and (player.get_node("Visual") as Node3D).visible, "death enters a visible hero death pose")
 	_check(not abilities.request_cast(&"q"), "L: abilities cannot be cast while dead")
 	var old_mana := stats.current_mana
+	await create_timer(presentation.death_pose_duration + 0.1).timeout
+	_check(not (player.get_node("Visual") as Node3D).visible, "death presentation hides the hero after its pose")
 	await create_timer(lifecycle.respawn_delay + 0.2).timeout
 	_check(stats.current_health == stats.max_health and stats.current_mana == stats.max_mana, "M: respawn restores health and mana to configured maximums")
 	_check(player.global_position.is_equal_approx(spawn_position), "M: respawn returns hero to original spawn position")
 	_check((player.get_node("Visual") as Node3D).visible, "M: respawn restores hero visual")
+	_check(presentation.current_state == ActorPresentation.VisualState.IDLE, "respawn resets the hero presentation state")
 	_check(not statuses.has_effect(&"r_surge") and player.command_state == PlayerController.CommandState.IDLE, "M: respawn has no stale buff or command")
 	_check(old_mana < stats.max_mana, "death-test setup had spent mana before its deterministic reset")
 

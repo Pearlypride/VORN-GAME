@@ -28,7 +28,6 @@ func _on_hero_died() -> void:
 	_combat.set_target(null)
 	_abilities.cancel_targeting()
 	_status_effects.clear_all()
-	_visual.hide()
 	_collision.set_deferred("disabled", true)
 	hero_died.emit()
 	var timer := get_tree().create_timer(respawn_delay)

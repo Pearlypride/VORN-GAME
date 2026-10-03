@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LaneTuning" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://gameplay/lane/lane_tuning.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+wave_interval = 20.0
+first_wave_delay = 2.0
+minion_spacing = 0.5
+xp_radius = 10.0

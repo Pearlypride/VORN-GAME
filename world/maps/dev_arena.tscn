@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3]
+[gd_scene load_steps=42 format=3]
 
 [ext_resource type="Script" path="res://world/maps/dev_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://gameplay/actors/player_controller.gd" id="2_player"]
@@ -20,6 +20,10 @@
 [ext_resource type="Script" path="res://gameplay/lane/lane_world.gd" id="18_lane_world"]
 [ext_resource type="Script" path="res://gameplay/combat/basic_attack_controller.gd" id="19_attack"]
 [ext_resource type="Script" path="res://gameplay/combat/actor_readability.gd" id="20_readability"]
+[ext_resource type="Script" path="res://gameplay/presentation/actor_presentation.gd" id="21_presentation"]
+[ext_resource type="Resource" path="res://gameplay/lane/lane_prototype.tres" id="22_lane_tuning"]
+[ext_resource type="Resource" path="res://gameplay/lane/tower_prototype.tres" id="23_tower_tuning"]
+[ext_resource type="Script" path="res://gameplay/telemetry/playtest_telemetry.gd" id="24_telemetry"]
 
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
@@ -31,10 +35,6 @@ ambient_light_energy = 0.8
 [sub_resource type="StandardMaterial3D" id="Material_floor"]
 albedo_color = Color(0.16, 0.2, 0.23, 1)
 roughness = 1.0
-
-[sub_resource type="StandardMaterial3D" id="Material_player"]
-albedo_color = Color(0.12, 0.65, 0.92, 1)
-roughness = 0.6
 
 [sub_resource type="StandardMaterial3D" id="Material_dummy"]
 albedo_color = Color(0.9, 0.31, 0.19, 1)
@@ -50,11 +50,6 @@ material = SubResource("Material_floor")
 
 [sub_resource type="BoxShape3D" id="BoxShape_floor"]
 size = Vector3(64, 0.2, 16)
-
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_player"]
-radius = 0.48
-height = 1.8
-material = SubResource("Material_player")
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape_player"]
 radius = 0.48
@@ -137,7 +132,7 @@ shadow_enabled = true
 script = ExtResource("8_camera")
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
-position = Vector3(0, 20, 17)
+position = Vector3(0, 22, 16)
 projection = 1
 size = 30.0
 current = true
@@ -177,25 +172,21 @@ mesh = SubResource("CylinderMesh_marker")
 
 [node name="LaneWorld" type="Node3D" parent="."]
 script = ExtResource("18_lane_world")
+tuning = ExtResource("22_lane_tuning")
+tower_definition = ExtResource("23_tower_tuning")
 
 [node name="Player" type="CharacterBody3D" parent="."]
 position = Vector3(-24, 0.9, 0)
 script = ExtResource("2_player")
 hero_definition = ExtResource("10_hero")
 
-[node name="Visual" type="MeshInstance3D" parent="Player"]
-mesh = SubResource("CapsuleMesh_player")
+[node name="Visual" type="Node3D" parent="Player"]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 shape = SubResource("CapsuleShape_player")
 
 [node name="Stats" type="Node" parent="Player"]
 script = ExtResource("3_stats")
-max_health = 100.0
-movement_speed = 5.5
-attack_damage = 20.0
-attack_range = 2.2
-attack_cooldown = 0.8
 
 [node name="Combat" type="Node" parent="Player"]
 script = ExtResource("4_combat")
@@ -205,7 +196,14 @@ script = ExtResource("19_attack")
 
 [node name="ActorReadability" type="Node3D" parent="Player"]
 script = ExtResource("20_readability")
-height_offset = 1.6
+height_offset = 2.05
+bar_width = 1.6
+
+[node name="ActorPresentation" type="Node3D" parent="Player"]
+script = ExtResource("21_presentation")
+
+[node name="PlaytestTelemetry" type="Node" parent="Player"]
+script = ExtResource("24_telemetry")
 
 [node name="AbilityController" type="Node" parent="Player"]
 script = ExtResource("11_abilities")
@@ -349,6 +347,10 @@ surface_material_override/0 = SubResource("Material_cast_range")
 visible = false
 mesh = SubResource("CylinderMesh_move")
 
+[node name="CastTargetRing" type="MeshInstance3D" parent="AbilityTargetingFeedback"]
+visible = false
+mesh = SubResource("TorusMesh_selection")
+
 [node name="AreaRadiusRing" type="MeshInstance3D" parent="AbilityTargetingFeedback"]
 visible = false
 mesh = SubResource("TorusMesh_area_radius")
@@ -365,8 +367,8 @@ script = ExtResource("7_hud")
 [node name="Panel" type="PanelContainer" parent="HUD"]
 offset_left = 20.0
 offset_top = 20.0
-offset_right = 470.0
-offset_bottom = 520.0
+offset_right = 520.0
+offset_bottom = 670.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 theme_override_constants/margin_left = 12
@@ -377,11 +379,33 @@ theme_override_constants/margin_bottom = 10
 [node name="VBox" type="VBoxContainer" parent="HUD/Panel/Margin"]
 theme_override_constants/separation = 7
 
+[node name="PlayerSection" type="Label" parent="HUD/Panel/Margin/VBox"]
+theme_override_colors/font_color = Color(0.43, 0.78, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "PLAYER"
+
 [node name="PlayerHealth" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "Player HP: 100 / 100"
+text = "Player HP: 1000 / 1000"
 
 [node name="PlayerMana" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Mana: 500 / 500"
+
+[node name="Economy" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Gold: 0"
+
+[node name="Progression" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Level 1 — XP 0 / 100"
+
+[node name="CombatSection" type="Label" parent="HUD/Panel/Margin/VBox"]
+theme_override_colors/font_color = Color(1, 0.77, 0.38, 1)
+theme_override_font_sizes/font_size = 14
+text = "COMBAT"
+
+[node name="CommandState" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Command: IDLE"
+
+[node name="CombatState" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Attack: ready"
 
 [node name="Selection" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Selected: None"
@@ -389,11 +413,10 @@ text = "Selected: None"
 [node name="TargetHealth" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Target HP: —"
 
-[node name="CommandState" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "Command: IDLE"
-
-[node name="CombatState" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "Attack: ready"
+[node name="AbilitiesSection" type="Label" parent="HUD/Panel/Margin/VBox"]
+theme_override_colors/font_color = Color(0.64, 1, 0.68, 1)
+theme_override_font_sizes/font_size = 14
+text = "ABILITIES"
 
 [node name="AbilityQ" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Q — Targeted Strike: READY (60 mana)"
@@ -410,11 +433,13 @@ text = "R — Overdrive: READY (120 mana)"
 [node name="TargetingMode" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Targeting: None"
 
-[node name="Economy" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "Gold: 0"
+[node name="RBuff" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "R buff: inactive"
 
-[node name="Progression" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "Level 1 — XP 0 / 100"
+[node name="LaneSection" type="Label" parent="HUD/Panel/Margin/VBox"]
+theme_override_colors/font_color = Color(1, 0.55, 0.43, 1)
+theme_override_font_sizes/font_size = 14
+text = "LANE"
 
 [node name="LaneStatus" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Waves A/B: 0 / 0"
@@ -422,8 +447,8 @@ text = "Waves A/B: 0 / 0"
 [node name="TowerStatus" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Towers A/B: 2200 / 2200"
 
-[node name="RBuff" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "R buff: inactive"
+[node name="Telemetry" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Playtest · last hits 0 · avg attack — · move 6.0 · wave 0 · gold 0 · level 1"
 
 [node name="Help" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Q/W/E then LMB · RMB/Esc cancel · R self · RMB commands · S stop"

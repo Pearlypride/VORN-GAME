@@ -7,6 +7,8 @@
 Code is grouped by responsibility:
 
 - `gameplay/actors/`: player movement and hero lifecycle
+- `gameplay/presentation/`: primitive model builders and signal-driven visual-state adapter
+- `gameplay/telemetry/`: local playtest counters
 - `gameplay/stats/`: reusable health, mana, regen, and combat stats
 - `gameplay/combat/`: attack intent validation, shared timing controller, damage metadata, and ranged basic-attack projectile
 - `gameplay/lane/`: lane path, minion definitions/AI, wave spawners, tower behavior, and lane setup
@@ -24,7 +26,7 @@ Code is grouped by responsibility:
 
 `HeroDefinition` supplies configurable base stats and ability definitions. `PlayerController` applies the hero data during startup; the definition is data rather than runtime state. Dummies each own an independent `ActorStats` node and handle only their own death presentation and respawn. No dummy contains player-specific logic.
 
-`CombatComponent` owns the hero's selected attack target, validates hostility and life, and delegates in-range attack intent to `BasicAttackController`. The shared controller owns IDLE/WINDUP/RELEASE/RECOVERY timing for heroes, minions, and towers. It applies melee damage at RELEASE or spawns a ranged projectile. The controller and damage resolution do not read desktop input. Ability damage is applied through `ActorStats.apply_damage()` by separate effect resources.
+`CombatComponent` owns the hero's selected attack target, validates hostility and life, and delegates in-range attack intent to `BasicAttackController`. The shared controller owns IDLE/WINDUP/RELEASE/RECOVERY timing for heroes, minions, and towers. It applies melee damage at RELEASE or spawns a ranged projectile. The controller and damage resolution do not read desktop input. Ability damage is applied through `ActorStats.apply_damage()` by separate effect resources. Hero, melee/ranged minion, tower, lane, and ability tuning are held in lightweight Godot resources where practical (`gameplay/heroes/`, `gameplay/lane/`, and ability definitions).
 
 `CombatActor` composes team identity, actor kind, alive state, hostility checks, and damage receipt onto a unit without requiring a shared gameplay inheritance tree. `TeamRules` is the central hostility policy. `LaneCombatRoster` caches registered combat actors and answers bounded-radius queries for minion/tower AI and area effects. Each accepted health change creates a `DamageEvent` with source, target, amount, category, and lethal flag. Minion death uses the final impact source for gold; only a hero basic-attack impact triggers hero aggro.
 
@@ -36,13 +38,13 @@ Code is grouped by responsibility:
 
 `AbilityController` owns per-hero runtime cooldown state and validates caster life, mana, cooldown, cast type, target validity, and range before spending. `AbilityDefinition` resources carry type, cost, cooldown, range, and an `AbilityEffect` resource. `AbilityCastContext` passes the caster, stats, target/point, and definition to that effect. `AbilityTargetingFeedback` presents range, point, AoE radius, and skillshot line with primitive geometry; presentation does not apply gameplay effects.
 
-The debug HUD reads state and formats it. It does not choose targets, apply damage, or advance attack timing. `ActorReadability` listens to `ActorStats` events and owns only world-space bars and short-lived damage numbers.
+The debug HUD reads state and formats it. It does not choose targets, apply damage, or advance attack timing. `ActorReadability` listens to `ActorStats` events and owns only world-space bars and short-lived damage numbers. `ActorPresentation` listens to semantic gameplay events and movement/attack state to drive primitive pose and feedback; it never owns timing or outcomes. Future animation should consume this state contract, as documented in [PRESENTATION.md](PRESENTATION.md).
 
 ## Timed modifiers and hero life cycle
 
 `StatusEffectController` stores small timed multiplicative modifiers and applies combined movement-speed and attack-cooldown multipliers to `ActorStats`. R uses it for a six-second speed/attack interval bonus. Death clears the modifiers, so no R effect persists through respawn. The API can later add modifier types or control tags for slows, stun, or silence without placing status timers into ability effects.
 
-`HeroLifecycle` listens for hero death, clears commands, basic attack target, ability targeting and modifiers, disables collision and hides the primitive, then respawns after a development delay. Respawn restores health and mana to their configured maxima at the original spawn. Regeneration pauses while dead; ability cooldowns continue ticking during the respawn wait.
+`HeroLifecycle` listens for hero death, clears commands, basic attack target, ability targeting and modifiers, disables collision and leaves death/respawn presentation to `ActorPresentation`, then respawns after a development delay. Respawn restores health and mana to their configured maxima at the original spawn. Regeneration pauses while dead; ability cooldowns continue ticking during the respawn wait.
 
 ## Lane systems
 
@@ -64,4 +66,4 @@ This project is local-only. A future server-authoritative simulation can receive
 
 ## Not implemented
 
-This prototype has one lane only. It does not include neutral jungle units, extra lanes, base structures, tower hero-aggro, tower armor, ability aggro, shop/items, fog of war, networking, production UI/art, animations, sound, or monetization. There is no generalized damage type or server authority yet. Scaling beyond small development waves needs profiling and possibly a spatial index; the current roster scans its cached actor list for bounded-radius queries.
+This prototype has one lane only. It does not include neutral jungle units, extra lanes, base structures, tower hero-aggro, tower armor, ability aggro, shop/items, fog of war, networking, production UI/art, imported/skeletal animation clips, sound, or monetization. There is no generalized damage type or server authority yet. Obstacle/path navigation is intentionally deferred; direct steering remains behind semantic destination commands and the lane path API. Desktop pointer/keyboard input is only an adapter, so a future mobile touch adapter can emit the same semantic commands without rewriting combat or movement rules. Scaling beyond small development waves needs profiling and possibly a spatial index; the current roster scans its cached actor list for bounded-radius queries.

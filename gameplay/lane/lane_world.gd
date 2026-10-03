@@ -6,8 +6,11 @@ const MINION_SCENE := preload("res://gameplay/lane/minion_actor.tscn")
 const TOWER_SCENE := preload("res://gameplay/lane/tower_actor.tscn")
 const MELEE_DEFINITION := preload("res://gameplay/lane/melee_minion.tres")
 const RANGED_DEFINITION := preload("res://gameplay/lane/ranged_minion.tres")
+const DEFAULT_TOWER_DEFINITION := preload("res://gameplay/lane/tower_prototype.tres")
 const SPAWNER_SCRIPT := preload("res://gameplay/lane/wave_spawner.gd")
 
+@export var tuning: LaneTuning
+@export var tower_definition: TowerDefinition
 @export_range(1.0, 120.0, 0.1) var wave_interval: float = 18.0
 @export_range(0.0, 30.0, 0.1) var first_wave_delay: float = 2.0
 @export_range(0.0, 5.0, 0.05) var unit_spacing: float = 0.35
@@ -22,27 +25,34 @@ var team_b_tower: TowerActor
 
 func _ready() -> void:
 	name = "LaneWorld"
+	if tuning != null:
+		wave_interval = tuning.wave_interval
+		first_wave_delay = tuning.first_wave_delay
+		unit_spacing = tuning.minion_spacing
+		var progression := get_node_or_null("../Player/Progression") as HeroProgression
+		if progression != null:
+			progression.xp_radius = tuning.xp_radius
+	if tower_definition == null:
+		tower_definition = DEFAULT_TOWER_DEFINITION
 	roster = LaneCombatRoster.new()
 	roster.name = "CombatRoster"
 	add_child(roster)
 	lane_path = LanePath.new()
 	lane_path.name = "LanePath"
 	add_child(lane_path)
-	team_a_tower = _create_tower("TeamATower", TeamRules.Team.TEAM_A, Vector3(-22.0, 0.0, 0.0), Color(0.14, 0.45, 0.9))
-	team_b_tower = _create_tower("TeamBTower", TeamRules.Team.TEAM_B, Vector3(22.0, 0.0, 0.0), Color(0.9, 0.24, 0.2))
+	team_a_tower = _create_tower("TeamATower", TeamRules.Team.TEAM_A, Vector3(-22.0, 0.0, 0.0))
+	team_b_tower = _create_tower("TeamBTower", TeamRules.Team.TEAM_B, Vector3(22.0, 0.0, 0.0))
 	team_a_spawner = _create_spawner("TeamAWaves", TeamRules.Team.TEAM_A)
 	team_b_spawner = _create_spawner("TeamBWaves", TeamRules.Team.TEAM_B)
 	_build_lane_strips()
 
-func _create_tower(tower_name: String, team: TeamRules.Team, at: Vector3, tint: Color) -> TowerActor:
+func _create_tower(tower_name: String, team: TeamRules.Team, at: Vector3) -> TowerActor:
 	var tower := TOWER_SCENE.instantiate() as TowerActor
 	tower.name = tower_name
 	tower.team = team
+	tower.definition = tower_definition
 	tower.position = at
 	add_child(tower)
-	var material := StandardMaterial3D.new()
-	material.albedo_color = tint
-	(tower.get_node("Visual") as MeshInstance3D).material_override = material
 	return tower
 
 func _create_spawner(spawner_name: String, team: TeamRules.Team) -> WaveSpawner:
@@ -74,6 +84,8 @@ func _build_lane_strips() -> void:
 		material.albedo_color = Color(0.12, 0.28, 0.45) if side == 0 else Color(0.43, 0.15, 0.14)
 		strip.material_override = material
 		add_child(strip)
+	_add_team_label("TEAM A", Vector3(-24.0, 0.18, -4.7), Color(0.42, 0.78, 1.0))
+	_add_team_label("TEAM B", Vector3(24.0, 0.18, -4.7), Color(1.0, 0.53, 0.42))
 	var lane := MeshInstance3D.new()
 	var lane_mesh := BoxMesh.new()
 	lane_mesh.size = Vector3(39.0, 0.025, 8.0)
@@ -83,3 +95,46 @@ func _build_lane_strips() -> void:
 	lane_material.albedo_color = Color(0.26, 0.28, 0.27)
 	lane.material_override = lane_material
 	add_child(lane)
+	var center_material := StandardMaterial3D.new()
+	center_material.albedo_color = Color(0.62, 0.57, 0.38)
+	for index in 7:
+		var dash := MeshInstance3D.new()
+		var dash_mesh := BoxMesh.new()
+		dash_mesh.size = Vector3(1.0, 0.035, 0.075)
+		dash.mesh = dash_mesh
+		dash.position = Vector3(-15.0 + float(index) * 5.0, 0.052, 0.0)
+		dash.material_override = center_material
+		add_child(dash)
+	var team_a_marker := StandardMaterial3D.new()
+	team_a_marker.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	team_a_marker.albedo_color = Color(0.25, 0.66, 1.0, 0.82)
+	team_a_marker.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var team_b_marker := StandardMaterial3D.new()
+	team_b_marker.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	team_b_marker.albedo_color = Color(1.0, 0.35, 0.28, 0.82)
+	team_b_marker.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	for index in 3:
+		_add_direction_chevron(Vector3(-15.0 + float(index) * 5.0, 0.07, -3.2), 1.0, team_a_marker)
+		_add_direction_chevron(Vector3(15.0 - float(index) * 5.0, 0.07, 3.2), -1.0, team_b_marker)
+
+func _add_direction_chevron(at: Vector3, direction: float, material: Material) -> void:
+	for side in [-1.0, 1.0]:
+		var segment := MeshInstance3D.new()
+		var mesh := BoxMesh.new()
+		mesh.size = Vector3(0.62, 0.035, 0.085)
+		segment.mesh = mesh
+		segment.position = at + Vector3(direction * 0.12, 0.0, float(side) * 0.22)
+		segment.rotation.y = -float(side) * 0.64 if direction > 0.0 else PI + float(side) * 0.64
+		segment.material_override = material
+		add_child(segment)
+
+func _add_team_label(label_text: String, at: Vector3, tint: Color) -> void:
+	var label := Label3D.new()
+	label.text = label_text
+	label.font_size = 64
+	label.pixel_size = 0.006
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = tint
+	label.outline_size = 8
+	label.position = at
+	add_child(label)

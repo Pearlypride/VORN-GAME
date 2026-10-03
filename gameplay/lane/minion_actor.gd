@@ -31,21 +31,16 @@ func _ready() -> void:
 	path_distance = initial_path_distance
 	if definition != null:
 		_stats.max_health = definition.max_health
-		_stats.current_health = definition.max_health
+		_stats.restore_full_health()
 		_stats.movement_speed = definition.movement_speed
 		_stats.attack_damage = definition.attack_damage
 		_stats.attack_range = definition.attack_range
 		_stats.attack_cooldown = definition.attack_cooldown
 		var attack_mode := BasicAttackController.AttackType.RANGED if definition.minion_type == MinionDefinition.MinionType.RANGED else BasicAttackController.AttackType.MELEE
 		_attacks.configure(attack_mode, definition.attack_point, definition.recovery_duration, definition.projectile_speed)
-		$Visual.material_override = StandardMaterial3D.new()
-		var faction_color := Color(0.14, 0.42, 0.92) if team == TeamRules.Team.TEAM_A else Color(0.9, 0.22, 0.16)
-		faction_color = faction_color.lerp(definition.tint, 0.15)
-		if definition.minion_type == MinionDefinition.MinionType.RANGED:
-			faction_color = faction_color.lightened(0.22)
-		$Visual.material_override.albedo_color = faction_color
 	_identity.team = team
 	_identity.actor_kind = &"minion"
+	($ActorReadability as ActorReadability).configure_team(team)
 	_stats.died.connect(_on_died)
 
 func configure(unit_definition: MinionDefinition, unit_team: TeamRules.Team, path: LanePath, start_distance: float = 0.0) -> void:
@@ -136,8 +131,10 @@ func _combat_tick(delta: float) -> void:
 		var direction := offset.normalized()
 		velocity.x = direction.x * _stats.movement_speed
 		velocity.z = direction.z * _stats.movement_speed
+		$Visual.look_at(global_position + direction, Vector3.UP)
 		move_and_slide()
 	else:
+		$Visual.look_at(target_actor.world_position(), Vector3.UP)
 		_attacks.try_attack(target_actor.actor)
 
 func _advance(delta: float) -> void:
@@ -152,6 +149,7 @@ func _advance(delta: float) -> void:
 		var direction := offset.normalized()
 		velocity.x = direction.x * _stats.movement_speed
 		velocity.z = direction.z * _stats.movement_speed
+		$Visual.look_at(global_position + direction, Vector3.UP)
 		move_and_slide()
 
 func _on_died() -> void:
@@ -164,7 +162,6 @@ func _on_died() -> void:
 	aggro_target = null
 	velocity = Vector3.ZERO
 	set_physics_process(false)
-	$Visual.hide()
 	$CollisionShape3D.set_deferred("disabled", true)
 	var killer := _stats.last_damage_source as Node3D
 	var killer_actor := killer.get_node_or_null("CombatActor") as CombatActor if is_instance_valid(killer) else null
