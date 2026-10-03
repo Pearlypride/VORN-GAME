@@ -1,4 +1,4 @@
-# VORN visual direction — Phase 7 slice
+# VORN visual direction — prototype slice
 
 ## Identity
 
@@ -6,7 +6,7 @@ VORN's first visual slice uses an ash-forged, mythic-industrial language: dark m
 
 ## KARN
 
-KARN is a front-line melee bruiser: a duelist who advances through pressure and wins close exchanges. Internal lore: a former breach-keeper of a vanished border citadel, carrying its broken gate as a cleaver. The primitive model has a broad chest, asymmetric pauldron, hard crest/visor, dark iron body, ember plates, and a heavy forward weapon. His kit names are **Rend**, **Breakline**, **War Ring**, and **Redline**. Existing ability effects/numbers remain prototype tuning.
+KARN is a front-line melee bruiser: a duelist who advances through pressure and wins close exchanges. Internal lore: a former breach-keeper of a vanished border citadel, carrying its broken gate as a cleaver. The Blender-built model has a broad chest, asymmetric pauldron, hard crest/visor, dark iron body, ember plates, and a heavy cleaver. Its low/medium-poly mesh is bound to a compact humanoid armature with in-place clips. His kit names are **Rend**, **Breakline**, **War Ring**, and **Redline**. Existing ability effects/numbers remain prototype tuning. If the imported asset fails, ActorPresentation can use its Phase 7 primitive KARN fallback.
 
 ## Hero identity and team identity
 
@@ -33,4 +33,4 @@ Effects listen to successful gameplay events and never alter damage, targeting, 
 
 ## Placeholder and mobile limits
 
-All characters, structures, landmarks, and most VFX are Godot primitives, not production art. The map is flat, direct-steered, and collision-free outside its lane floor. The minimap is a vector projection of current lane actors, not screenshot art; it can later project a real map model. HUD controls do not implement touch. Avoid adding unique materials/nodes per frame; keep presentation updates throttled and temporary effects self-cleaning.
+KARN is a generated rigged prototype; minions, structures, landmarks, and most VFX remain Godot primitives, not production art. The map is flat and direct-steered, with simple gameplay collision separate from detailed render meshes. The minimap is a vector projection of current lane actors, not screenshot art; it can later project a real map model. HUD controls do not implement touch. Avoid adding unique materials/nodes per frame; keep presentation updates throttled and temporary effects self-cleaning.

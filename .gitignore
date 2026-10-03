@@ -20,3 +20,8 @@
 .idea/
 .DS_Store
 Thumbs.db
+
+# Blender/Python generated backups and bytecode
+*.blend1
+__pycache__/
+*.py[cod]

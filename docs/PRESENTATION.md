@@ -10,31 +10,31 @@ Attack release remains authoritative in `BasicAttackController`: melee damage is
 
 - `ActorStats`: values and stat/damage signals; no UI or scene presentation.
 - `BasicAttackController` / `AbilityController`: command execution, validation, timing, and effects; no mouse input.
-- `ActorPresentation`: placeholder model, procedural pose, hit/death/respawn/level feedback; no damage or cooldown ownership.
+- `ActorPresentation`: semantic visual-state adapter, optional rigged KARN model, primitive fallback, hit/death/respawn/level feedback; no damage or cooldown ownership.
 - `ActorReadability`: world health bars and floating damage labels driven by stats events.
 - `DebugHUD`: read-only formatting of gameplay/telemetry values.
 
-`ActorPresentation` runs its lightweight motion update at roughly 12.5 Hz. Its primitive meshes do not participate in collision or gameplay shape. Team/projectile/feedback materials are shared resources; brief feedback nodes are freed by their owning tween/timer.
+`ActorPresentation` runs its remaining primitive motion update at roughly 12.5 Hz. The imported KARN mesh and skeleton do not participate in gameplay collision or shape. Team/projectile/feedback materials are shared resources; brief feedback nodes are freed by their owning tween/timer.
 
-## Future AnimationTree integration
+## Phase 8 rigged KARN integration
 
-Keep the state contract and replace the procedural pose driver behind it with an `AnimationTree`/`AnimationPlayer` adapter:
+`assets/characters/karn/karn_character.tscn` wraps the generated GLB and `KarnRigAdapter`. The adapter finds the imported `AnimationPlayer` and maps `ActorPresentation` states into `IDLE`, `RUN`, `ATTACK_1`, `CAST`, `HIT`, and `DEATH`. The rigged hero is selected by default; setting `ActorPresentation.use_rigged_karn = false` or launching with `VORN_FORCE_PRIMITIVE_KARN=1` forces the existing primitive `PlaceholderModels.build_hero()` model. Missing scene/adapter falls back automatically. Minions, towers, and non-hero actors remain primitive-built.
 
-| Gameplay signal/state | Future clip/parameter |
+| Gameplay signal/state | KARN animation |
 | --- | --- |
-| velocity / `MOVE` | locomotion blend by speed and direction |
-| `ATTACK_WINDUP` | attack anticipation; controller supplies remaining windup |
-| `ATTACK_RELEASE` | strike/release pose synchronized to the controller's release signal |
-| `ATTACK_RECOVERY` | recovery/backswing; controller owns recovery end |
-| `CAST` + ability id | ability-specific cast pose |
-| `HIT` | short hit reaction |
-| `DEATH` / respawn signal | death pose then reset to idle on respawn |
+| velocity / `MOVE` | looping `RUN` |
+| `ATTACK_WINDUP` → `ATTACK_RELEASE` → `ATTACK_RECOVERY` | one continuous `ATTACK_1` clip |
+| `CAST` + ability id | `CAST` |
+| `HIT` | `HIT` |
+| `DEATH` / respawn | `DEATH` then `IDLE` on respawn |
 
-The controller's clock and events remain the source of truth. Animation can interpolate, blend, and present those events, but cannot apply damage, validate targets, or extend/reduce cooldowns.
+`ATTACK_1` is 0.533 s at 30 fps. Its normalized timing is approximately windup 0.00–0.44, release 0.44–0.625, recovery 0.625–1.0. This mirrors current prototype timings (0.24 s windup, 0.08 s release feedback, 0.22 s recovery); cooldown time outside those phases is not added to the clip. `BasicAttackController` still emits release and decides damage. Blender keys and imported animation events never own damage timing. All clips are in-place; gameplay movement remains controlled by `PlayerController`.
 
-## Placeholder strategy
+The adapter is intentionally a small `AnimationPlayer` state mapper rather than a gameplay-aware `AnimationTree`. A future blend tree can replace its internals while keeping `ActorPresentation` as the boundary.
 
-`PlaceholderModels` builds low-node-count primitives for a humanoid hero, visibly broad melee and slim staff ranged minions, and an elevated-emitter tower. Materials are shared `.tres` resources. This is prototype readability, not production character art, rigging, or animation. Replace the builders/models while preserving gameplay nodes and the `ActorPresentation` state contract.
+## Primitive fallback and collision
+
+The player keeps its existing simple `CollisionShape3D` as a sibling of `Visual/CharacterModel`; the GLB mesh is never used as collision. If the rigged asset is unavailable, `ActorPresentation` creates the primitive KARN model. Validate both modes with the Phase 8 suite before changing the asset path. See [ART_PIPELINE.md](ART_PIPELINE.md) for reproducible source generation and import details.
 
 
 ## Phase 7 vertical-slice extension

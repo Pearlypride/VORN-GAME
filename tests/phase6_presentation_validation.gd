@@ -86,7 +86,10 @@ func _run() -> void:
 	_check(not range_ring.visible and not aim_line.visible, "K: cancel clears targeting indicators")
 
 	var model := player.get_node("Visual/CharacterModel")
-	_check(model.has_node("Torso") and model.has_node("Head") and model.has_node("WeaponPivot/WeaponHead"), "M: humanoid hero placeholder exists")
+	var rig_adapter := model as KarnRigAdapter
+	var rig_valid := rig_adapter != null and rig_adapter.has_clip(&"IDLE") and rig_adapter.has_clip(&"ATTACK_1")
+	var primitive_valid := model.has_node("Torso") and model.has_node("Head") and model.has_node("WeaponPivot/WeaponHead")
+	_check(rig_valid or primitive_valid, "M: humanoid KARN model or primitive fallback exists")
 	var melee := MINION_SCENE.instantiate() as MinionActor
 	melee.definition = MELEE_DEF
 	melee.name = "Phase6Melee"

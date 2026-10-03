@@ -2,12 +2,13 @@
 
 ## Current scene
 
-`world/maps/dev_arena.tscn` is the configured main scene. It contains a fixed-pitch MOBA camera (54° downward pitch, orthographic size 20, zoom range 18–30), `KARN`, a one-lane `LaneWorld`, two towers, two wave spawners, three target practice dummies, desktop input, a clean normal HUD, a vector minimap, and an F3 development overlay. All visuals use primitives and standard materials.
+`world/maps/dev_arena.tscn` is the configured main scene. It contains a fixed-pitch MOBA camera (54° downward pitch, orthographic size 20, zoom range 18–30), KARN with a generated rigged GLB and primitive fallback, a one-lane `LaneWorld`, two towers, two wave spawners, three target practice dummies, desktop input, a clean normal HUD, a vector minimap, and an F3 development overlay. World dressing, minions, towers, and many feedback visuals remain primitive-built.
 
 Code is grouped by responsibility:
 
 - `gameplay/actors/`: player movement and hero lifecycle
-- `gameplay/presentation/`: primitive model builders and signal-driven visual-state adapter
+- `gameplay/presentation/`: primitive model builders, shared effects, and signal-driven visual-state adapter
+- `tools/blender/`, `art/blender/`, `art/exports/`, `assets/characters/`: deterministic character source/build/export and Godot-facing art
 - `gameplay/telemetry/`: local playtest counters
 - `gameplay/stats/`: reusable health, mana, regen, and combat stats
 - `gameplay/combat/`: attack intent validation, shared timing controller, damage metadata, and ranged basic-attack projectile
@@ -39,7 +40,7 @@ Code is grouped by responsibility:
 
 `AbilityController` owns per-hero runtime cooldown state and validates caster life, mana, cooldown, cast type, target validity, and range before spending. `AbilityDefinition` resources carry type, cost, cooldown, range, and an `AbilityEffect` resource. `AbilityCastContext` passes the caster, stats, target/point, and definition to that effect. `AbilityTargetingFeedback` presents range, point, AoE radius, and skillshot line with primitive geometry; presentation does not apply gameplay effects.
 
-The debug HUD reads state and formats it. It does not choose targets, apply damage, or advance attack timing. `ActorReadability` listens to `ActorStats` events and owns only world-space bars and short-lived damage numbers. `ActorPresentation` listens to semantic gameplay events and movement/attack state to drive primitive pose and feedback; it never owns timing or outcomes. Future animation should consume this state contract, as documented in [PRESENTATION.md](PRESENTATION.md).
+The debug HUD reads state and formats it. It does not choose targets, apply damage, or advance attack timing. `ActorReadability` listens to `ActorStats` events and owns only world-space bars and short-lived damage numbers. `ActorPresentation` listens to semantic gameplay events and movement/attack state to drive the rigged KARN adapter or primitive fallback and feedback; it never owns timing or outcomes. `KarnRigAdapter` only maps presentation states to clips. It does not read commands or combat state. See [PRESENTATION.md](PRESENTATION.md) and [ART_PIPELINE.md](ART_PIPELINE.md).
 
 ## Timed modifiers and hero life cycle
 
@@ -65,6 +66,10 @@ Mobile touch adapters can call the same `PlayerController` methods and `AbilityC
 
 This project is local-only. A future server-authoritative simulation can receive semantic ability/movement commands and run the same validation/effect rules on the server. Client-side visuals and prediction are not authority. No networking, replication, prediction, or trust protocol is implemented here.
 
+## Art pipeline boundary
+
+Blender sources live under `art/blender/` (excluded from Godot's asset scanner with `.gdignore`), deterministic scripts live in `tools/blender/`, exported GLB files are placed under `art/exports/`, and Godot scenes/resources are under `assets/characters/`. The GLB contains render mesh, skin, armature, materials, and in-place clips. The player's gameplay `CollisionShape3D`, stats, command, and combat components remain outside the art scene. New heroes should implement the same scene/adapter boundary without importing gameplay logic. See [ART_PIPELINE.md](ART_PIPELINE.md).
+
 ## Not implemented
 
-This prototype has one lane only. KARN is the single hero presentation slice; the HUD and environment remain prototype art built from primitives. It does not include neutral jungle units, extra lanes, base structures, tower hero-aggro, tower armor, ability aggro, shop/items, fog of war, networking, production UI/art, imported/skeletal animation clips, sound, or monetization. There is no generalized damage type or server authority yet. Obstacle/path navigation is intentionally deferred; direct steering remains behind semantic destination commands and the lane path API. Desktop pointer/keyboard input is only an adapter, so a future mobile touch adapter can emit the same semantic commands without rewriting combat or movement rules. Scaling beyond small development waves needs profiling and possibly a spatial index; the current roster scans its cached actor list for bounded-radius queries.
+This prototype has one lane only. KARN is the first rigged prototype hero; the HUD and environment remain prototype art and minions/towers remain primitive-built. It does not include neutral jungle units, extra lanes, base structures, tower hero-aggro, tower armor, ability aggro, shop/items, fog of war, networking, production UI/art, sound, or monetization. There is no generalized damage type or server authority yet. Obstacle/path navigation is intentionally deferred; direct steering remains behind semantic destination commands and the lane path API. Desktop pointer/keyboard input is only an adapter, so a future mobile touch adapter can emit the same semantic commands without rewriting combat or movement rules. Scaling beyond small development waves needs profiling and possibly a spatial index; the current roster scans its cached actor list for bounded-radius queries.

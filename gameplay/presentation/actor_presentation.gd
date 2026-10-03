@@ -6,6 +6,7 @@ enum VisualState { IDLE, MOVE, ATTACK_WINDUP, ATTACK_RELEASE, ATTACK_RECOVERY, C
 
 const HIT_MATERIAL: Material = preload("res://gameplay/presentation/materials/hit_flash.tres")
 const SLASH_MATERIAL: Material = preload("res://gameplay/presentation/materials/vfx_rend.tres")
+const KARN_CHARACTER_SCENE := "res://assets/characters/karn/karn_character.tscn"
 
 signal visual_state_changed(state: VisualState, detail: StringName)
 signal actor_died
@@ -14,6 +15,7 @@ signal actor_respawned
 @export var hit_state_duration: float = 0.18
 @export var cast_state_duration: float = 0.24
 @export var death_pose_duration: float = 0.65
+@export var use_rigged_karn: bool = true
 
 var current_state: VisualState = VisualState.IDLE
 var state_detail: StringName = &""
@@ -26,6 +28,7 @@ var _progression: HeroProgression
 var _lifecycle: HeroLifecycle
 var _visual: Node3D
 var _model: Node3D
+var _rig_adapter: KarnRigAdapter
 var _torso: Node3D
 var _weapon_pivot: Node3D
 var _shoulder_left: Node3D
@@ -50,7 +53,7 @@ func _ready() -> void:
 	_progression = _owner_actor.get_node_or_null("Progression") as HeroProgression
 	_lifecycle = _owner_actor.get_node_or_null("HeroLifecycle") as HeroLifecycle
 	_visual = _owner_actor.get_node_or_null("Visual") as Node3D
-	call_deferred("_build_placeholder")
+	call_deferred("_build_presentation_model")
 	_build_hit_marker()
 	if _stats != null:
 		_stats.damage_received.connect(_on_damage_received)
@@ -105,15 +108,15 @@ func _process(delta: float) -> void:
 	if _timed_state_remaining <= 0.0 and current_state in [VisualState.HIT, VisualState.CAST]:
 		_refresh_from_gameplay()
 
-func _build_placeholder() -> void:
+func _build_presentation_model() -> void:
 	if _visual == null or _identity == null:
 		return
 	for child in _visual.get_children():
-		if child.name in ["CharacterModel", "TowerModel"]:
+		if child.name in ["CharacterModel", "TowerModel", "KarnCharacter"]:
 			child.queue_free()
 	match _identity.actor_kind:
 		&"hero":
-			_model = PlaceholderModels.build_hero()
+			_model = _build_hero_model()
 		&"minion":
 			var minion := _owner_actor as MinionActor
 			var kind := minion.definition.minion_type if minion != null and minion.definition != null else MinionDefinition.MinionType.MELEE
@@ -123,6 +126,7 @@ func _build_placeholder() -> void:
 		_:
 			return
 	_visual.add_child(_model)
+	_rig_adapter = _model as KarnRigAdapter
 	_torso = _model.get_node_or_null("Torso") as Node3D
 	_weapon_pivot = _model.get_node_or_null("WeaponPivot") as Node3D
 	_shoulder_left = _model.get_node_or_null("ShoulderLeft") as Node3D
@@ -131,6 +135,21 @@ func _build_placeholder() -> void:
 	_leg_left = _model.get_node_or_null("LegLeft") as Node3D
 	_leg_right = _model.get_node_or_null("LegRight") as Node3D
 	_tower_emitter = _model.get_node_or_null("Emitter") as Node3D
+	if _rig_adapter != null:
+		_rig_adapter.play_visual_state(current_state, state_detail)
+
+func _build_hero_model() -> Node3D:
+	var force_primitive := OS.get_environment("VORN_FORCE_PRIMITIVE_KARN") == "1"
+	if use_rigged_karn and not force_primitive and ResourceLoader.exists(KARN_CHARACTER_SCENE):
+		var character_scene := ResourceLoader.load(KARN_CHARACTER_SCENE) as PackedScene
+		if character_scene != null:
+			var instance := character_scene.instantiate() as Node3D
+			if instance is KarnRigAdapter and instance.validate_imported_rig():
+				instance.name = "CharacterModel"
+				return instance
+			if instance != null:
+				instance.queue_free()
+	return PlaceholderModels.build_hero()
 
 func _build_hit_marker() -> void:
 	if _visual == null:
@@ -319,4 +338,6 @@ func _set_state(new_state: VisualState, detail: StringName = &"") -> void:
 		return
 	current_state = new_state
 	state_detail = detail
+	if is_instance_valid(_rig_adapter):
+		_rig_adapter.play_visual_state(current_state, state_detail)
 	visual_state_changed.emit(current_state, state_detail)

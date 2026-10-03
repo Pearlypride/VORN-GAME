@@ -58,6 +58,19 @@ godot --headless --path . --script res://tests/phase6_presentation_validation.gd
 - Shared IDLE/WINDUP/RELEASE/RECOVERY basic-attack lifecycle for the hero, melee/ranged minions, and towers
 - Tracking primitive projectiles for ranged hero attacks, ranged minions, and towers; damage and last-hit credit resolve on impact
 - World-space health bars and brief floating damage numbers for readable combat feedback
-- Primitive hero/minion/tower presentation, semantic presentation states, hit/death/respawn/level feedback, and grouped development HUD with local playtest telemetry
+- Rigged KARN prototype generated from Blender, primitive minion/tower presentation, semantic animation adapter, hit/death/respawn/level feedback, and grouped development HUD with local playtest telemetry
 
-Movement uses direct steering/basic range checks in this simple lane. Obstacle-aware navigation and touch input are intentionally deferred; the mobile layout is presentation-only. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ABILITIES.md](docs/ABILITIES.md), [docs/LANE_SYSTEM.md](docs/LANE_SYSTEM.md), [docs/COMBAT_TIMING.md](docs/COMBAT_TIMING.md), [docs/PRESENTATION.md](docs/PRESENTATION.md), and [docs/PLAYTEST.md](docs/PLAYTEST.md), [docs/VISUAL_DIRECTION.md](docs/VISUAL_DIRECTION.md) for architecture, identity and the graphical playtest checklist.
+## KARN art pipeline (Phase 8)
+
+The KARN source is reproducibly generated with Blender 5.2.2 using the configured `/snap/bin/blender` executable. From the project root:
+
+```sh
+/snap/bin/blender --background --python tools/blender/build_karn.py
+/snap/bin/blender --background --python tools/blender/validate_character.py
+godot --headless --path . --editor --quit
+godot --headless --path . --script res://tests/phase8_art_pipeline_validation.gd
+```
+
+The build writes `art/blender/karn.blend` and `art/exports/karn.glb`; Godot imports the GLB and `assets/characters/karn/karn_character.tscn` wraps it in a model-only animation adapter. Set `VORN_FORCE_PRIMITIVE_KARN=1` before launching Godot, or disable `use_rigged_karn` on `ActorPresentation`, to force the primitive fallback. See [docs/ART_PIPELINE.md](docs/ART_PIPELINE.md) for rig, animation, and extension contracts.
+
+Movement uses direct steering/basic range checks in this simple lane. Obstacle-aware navigation and touch input are intentionally deferred; the mobile layout is presentation-only. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/ABILITIES.md](docs/ABILITIES.md), [docs/LANE_SYSTEM.md](docs/LANE_SYSTEM.md), [docs/COMBAT_TIMING.md](docs/COMBAT_TIMING.md), [docs/PRESENTATION.md](docs/PRESENTATION.md), [docs/PLAYTEST.md](docs/PLAYTEST.md), [docs/VISUAL_DIRECTION.md](docs/VISUAL_DIRECTION.md), and [docs/ART_PIPELINE.md](docs/ART_PIPELINE.md) for architecture, identity, pipeline, and playtest details.
