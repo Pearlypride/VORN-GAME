@@ -48,3 +48,16 @@ Run the arena in a normal Godot window. This checklist measures feel and visual 
 ### Observation record
 
 For each issue include: **area / reproduction / expected / observed / severity (1–5) / proposed tuning change**. Keep balance suggestions separate from bugs. Prototype values are not final balance targets.
+
+
+## Phase 7 vertical-slice review
+
+- [ ] Start with the normal HUD only; use F3 to show and hide developer values.
+- [ ] Review the minimap, score/time row, selected-target card, bottom vitals, decorative movement control, and ability row at each requested aspect ratio.
+- [ ] Confirm KARN is the visually dominant unit; compare his cleaver silhouette with compact melee/ranged minions.
+- [ ] Check tower platform/emitter scale, team ownership accents, center landmark, ridge/rock framing, and crystal clusters.
+- [ ] Cast Rend, Breakline, War Ring, and Redline; check each cue stays visible at play distance and does not obscure the lane.
+- [ ] Watch minion fights for projectile/hit-feedback spam. Confirm hero bars, level marker, selection, and target panel remain readable.
+- [ ] At 1920×1080, 1600×900, 1280×720, and 2340×1080, confirm HUD regions stay anchored, no control covers the hero, and ability buttons fit on screen.
+
+Record screenshots and short clips from default zoom plus one zoom step out. Mark any overlap or illegible labels with the viewport size and scene state.

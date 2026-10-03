@@ -35,3 +35,14 @@ The controller's clock and events remain the source of truth. Animation can inte
 ## Placeholder strategy
 
 `PlaceholderModels` builds low-node-count primitives for a humanoid hero, visibly broad melee and slim staff ranged minions, and an elevated-emitter tower. Materials are shared `.tres` resources. This is prototype readability, not production character art, rigging, or animation. Replace the builders/models while preserving gameplay nodes and the `ActorPresentation` state contract.
+
+
+## Phase 7 vertical-slice extension
+
+KARN uses a distinct charcoal/ash-metal and ember palette. Team ownership remains in team health bars, selection markers, lane accents, tower materials, and minimap symbols; hero identity is not encoded by Team A blue alone. The primitive presentation adds an asymmetric shoulder, crested helm, visor, and heavy cleaver. Melee and ranged minions use simpler, shorter silhouettes so they remain visually subordinate. Towers add a broad platform, shaft, crown, and readable emitter.
+
+The normal HUD uses anchored panels and reusable palette/style tokens in `ui/theme/vorn_ui_theme.gd`; the old telemetry panel stays available with F3. Ability presentation listens to successful ability casts: Rend uses a brief slash flash, Breakline has an elongated ember projectile, War Ring expands a ground ring, and Redline shows a timed hero aura. Basic ranged projectiles use short shared-material streaks and impact rings. Effects are presentation-only and short-lived.
+
+Environment props are created by `world/environment_dressing.gd`, have no collision, and remain sparse around the fight lane: ridge silhouettes, boulders, team crystals, and a paired center landmark. The lane remains intentionally flat for steering and combat tests. Limit unique materials, keep prop counts low, and avoid particle systems, screen-space blur, expensive outlines, or mandatory real-time post-processing for mobile.
+
+The Phase 7 camera opens around the Team A approach (rig X = −10) with a fixed ~54° pitch, orthographic size 20, pan speed 0.038, and zoom limits 18–30. It remains independent of KARN and has no free-look.

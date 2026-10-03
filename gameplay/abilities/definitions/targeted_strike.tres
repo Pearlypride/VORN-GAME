@@ -10,7 +10,7 @@ damage = 120.0
 [resource]
 script = ExtResource("1_definition")
 ability_id = &"q"
-display_name = "Targeted Strike"
+display_name = "Rend"
 cast_type = 0
 mana_cost = 60.0
 cooldown = 5.0

@@ -11,6 +11,12 @@ func _ready() -> void:
 	_move_marker_timer.timeout.connect(_on_move_marker_timer_timeout)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_F3:
+		var hud := get_node_or_null("../MobaHUD") as MobaHUD
+		if hud != null:
+			hud.toggle_debug()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("clear_command"):
 		if _abilities.is_targeting():
 			_abilities.cancel_targeting()

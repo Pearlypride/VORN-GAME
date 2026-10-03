@@ -9,7 +9,10 @@
 
 [resource]
 script = ExtResource("1_hero")
-hero_name = "VORN_TEST_HERO"
+hero_name = "KARN"
+role = "Melee Bruiser"
+visual_theme = "Ash-forged iron and ember oath"
+internal_lore = "Once the breach-keeper of a vanished border citadel, Karn carries its broken gate as a cleaver. He believes a fight is decided by whoever can keep advancing after the first impact."
 max_health = 1000.0
 max_mana = 500.0
 health_regeneration = 2.0

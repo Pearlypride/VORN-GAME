@@ -86,7 +86,7 @@ func _run() -> void:
 	_check(not range_ring.visible and not aim_line.visible, "K: cancel clears targeting indicators")
 
 	var model := player.get_node("Visual/CharacterModel")
-	_check(model.has_node("Torso") and model.has_node("Head") and model.has_node("WeaponBlade"), "M: humanoid hero placeholder exists")
+	_check(model.has_node("Torso") and model.has_node("Head") and model.has_node("WeaponPivot/WeaponHead"), "M: humanoid hero placeholder exists")
 	var melee := MINION_SCENE.instantiate() as MinionActor
 	melee.definition = MELEE_DEF
 	melee.name = "Phase6Melee"

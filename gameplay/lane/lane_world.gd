@@ -8,6 +8,10 @@ const MELEE_DEFINITION := preload("res://gameplay/lane/melee_minion.tres")
 const RANGED_DEFINITION := preload("res://gameplay/lane/ranged_minion.tres")
 const DEFAULT_TOWER_DEFINITION := preload("res://gameplay/lane/tower_prototype.tres")
 const SPAWNER_SCRIPT := preload("res://gameplay/lane/wave_spawner.gd")
+const LANE_STONE: Material = preload("res://gameplay/presentation/materials/lane_stone.tres")
+const TEAM_A_LANE: Material = preload("res://gameplay/presentation/materials/lane_team_a.tres")
+const TEAM_B_LANE: Material = preload("res://gameplay/presentation/materials/lane_team_b.tres")
+const RIDGE_MATERIAL: Material = preload("res://gameplay/presentation/materials/rock_dark.tres")
 
 @export var tuning: LaneTuning
 @export var tower_definition: TowerDefinition
@@ -75,25 +79,33 @@ func _create_spawner(spawner_name: String, team: TeamRules.Team) -> WaveSpawner:
 
 func _build_lane_strips() -> void:
 	for side in 2:
-		var strip := MeshInstance3D.new()
-		var mesh := BoxMesh.new()
-		mesh.size = Vector3(17.0, 0.035, 11.5)
-		strip.mesh = mesh
-		strip.position = Vector3(-21.5 if side == 0 else 21.5, 0.015, 0.0)
-		var material := StandardMaterial3D.new()
-		material.albedo_color = Color(0.12, 0.28, 0.45) if side == 0 else Color(0.43, 0.15, 0.14)
-		strip.material_override = material
-		add_child(strip)
-	_add_team_label("TEAM A", Vector3(-24.0, 0.18, -4.7), Color(0.42, 0.78, 1.0))
-	_add_team_label("TEAM B", Vector3(24.0, 0.18, -4.7), Color(1.0, 0.53, 0.42))
+		var platform := MeshInstance3D.new()
+		var platform_mesh := CylinderMesh.new()
+		platform_mesh.top_radius = 3.3
+		platform_mesh.bottom_radius = 3.55
+		platform_mesh.height = 0.045
+		platform.mesh = platform_mesh
+		platform.position = Vector3(-22.0 if side == 0 else 22.0, -0.025, 0.0)
+		platform.material_override = TEAM_A_LANE if side == 0 else TEAM_B_LANE
+		platform.name = "TeamTowerApproach"
+		add_child(platform)
+	_add_team_label("TEAM A", Vector3(-17.0, 0.18, -4.7), Color(0.42, 0.78, 1.0))
+	_add_team_label("TEAM B", Vector3(17.0, 0.18, -4.7), Color(1.0, 0.53, 0.42))
 	var lane := MeshInstance3D.new()
 	var lane_mesh := BoxMesh.new()
 	lane_mesh.size = Vector3(39.0, 0.025, 8.0)
 	lane.mesh = lane_mesh
 	lane.position = Vector3(0.0, 0.025, 0.0)
-	var lane_material := StandardMaterial3D.new()
-	lane_material.albedo_color = Color(0.26, 0.28, 0.27)
-	lane.material_override = lane_material
+	lane.material_override = LANE_STONE
+	var edge_mesh := BoxMesh.new()
+	edge_mesh.size = Vector3(39.0, 0.11, 0.18)
+	for side in [-1.0, 1.0]:
+		var edge := MeshInstance3D.new()
+		edge.name = "LaneEdge"
+		edge.mesh = edge_mesh
+		edge.position = Vector3(0.0, 0.055, side * 4.1)
+		edge.material_override = RIDGE_MATERIAL
+		add_child(edge)
 	add_child(lane)
 	var center_material := StandardMaterial3D.new()
 	center_material.albedo_color = Color(0.62, 0.57, 0.38)

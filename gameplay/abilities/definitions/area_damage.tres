@@ -11,7 +11,7 @@ radius = 3.0
 [resource]
 script = ExtResource("1_definition")
 ability_id = &"e"
-display_name = "Area Damage"
+display_name = "War Ring"
 cast_type = 2
 mana_cost = 70.0
 cooldown = 10.0

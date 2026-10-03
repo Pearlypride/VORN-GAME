@@ -106,7 +106,7 @@ func _on_died() -> void:
 	target_actor = null
 	_attacks.stop_attacking()
 	set_physics_process(false)
-	$Visual.hide()
+	# ActorPresentation owns the short collapse/fade; the tower remains readable while it falls.
 	$CollisionShape3D.set_deferred("disabled", true)
 
 func _flat_distance(first: Vector3, second: Vector3) -> float:

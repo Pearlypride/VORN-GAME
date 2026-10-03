@@ -12,7 +12,7 @@ projectile_scene = ExtResource("3_projectile")
 [resource]
 script = ExtResource("1_definition")
 ability_id = &"w"
-display_name = "Line Projectile"
+display_name = "Breakline"
 cast_type = 1
 mana_cost = 80.0
 cooldown = 8.0

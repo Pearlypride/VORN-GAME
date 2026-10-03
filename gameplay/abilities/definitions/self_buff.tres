@@ -12,7 +12,7 @@ attack_cooldown_multiplier = 0.7
 [resource]
 script = ExtResource("1_definition")
 ability_id = &"r"
-display_name = "Overdrive"
+display_name = "Redline"
 cast_type = 3
 mana_cost = 120.0
 cooldown = 35.0

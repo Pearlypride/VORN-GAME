@@ -32,7 +32,7 @@ func _run() -> void:
 	dummies = [arena.get_node("Dummy1"), arena.get_node("Dummy2"), arena.get_node("Dummy3")]
 	stats.health_regeneration = 0.0
 	stats.mana_regeneration = 0.0
-	_check(player.hero_definition.hero_name == "VORN_TEST_HERO", "hero definition configures the prototype player")
+	_check(player.hero_definition.hero_name == "KARN", "hero definition configures the prototype player")
 	_check(stats.max_health == 1000.0 and stats.max_mana == 500.0, "hero definition configures base health and mana")
 	_check(abilities.get_ability_ids().size() == 4, "hero definition loads Q/W/E/R data assets")
 	var starting_mana := stats.current_mana

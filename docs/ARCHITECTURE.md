@@ -2,7 +2,7 @@
 
 ## Current scene
 
-`world/maps/dev_arena.tscn` is the configured main scene. It contains a fixed-pitch MOBA camera, `VORN_TEST_HERO`, a one-lane `LaneWorld`, two towers, two wave spawners, three legacy development dummies, desktop input, primitive feedback, and a debug HUD. All visuals use primitives and standard materials.
+`world/maps/dev_arena.tscn` is the configured main scene. It contains a fixed-pitch MOBA camera (54° downward pitch, orthographic size 20, zoom range 18–30), `KARN`, a one-lane `LaneWorld`, two towers, two wave spawners, three target practice dummies, desktop input, a clean normal HUD, a vector minimap, and an F3 development overlay. All visuals use primitives and standard materials.
 
 Code is grouped by responsibility:
 
@@ -17,7 +17,8 @@ Code is grouped by responsibility:
 - `gameplay/abilities/`: cast definitions, per-hero runtime cooldowns, effects, and projectile
 - `gameplay/status/`: minimal timed stat modifiers, currently used by R
 - `input/`: desktop event-to-command adapter
-- `ui/hud/`: debug-only state display
+- `ui/hud/`: normal MOBA HUD, vector minimap, and hidden-by-default development overlay
+- `world/environment_dressing.gd`: collision-free primitive terrain dressing
 - `world/`: camera, selection/targeting presentation, and arena scene
 
 ## Actor and combat responsibilities
@@ -66,4 +67,4 @@ This project is local-only. A future server-authoritative simulation can receive
 
 ## Not implemented
 
-This prototype has one lane only. It does not include neutral jungle units, extra lanes, base structures, tower hero-aggro, tower armor, ability aggro, shop/items, fog of war, networking, production UI/art, imported/skeletal animation clips, sound, or monetization. There is no generalized damage type or server authority yet. Obstacle/path navigation is intentionally deferred; direct steering remains behind semantic destination commands and the lane path API. Desktop pointer/keyboard input is only an adapter, so a future mobile touch adapter can emit the same semantic commands without rewriting combat or movement rules. Scaling beyond small development waves needs profiling and possibly a spatial index; the current roster scans its cached actor list for bounded-radius queries.
+This prototype has one lane only. KARN is the single hero presentation slice; the HUD and environment remain prototype art built from primitives. It does not include neutral jungle units, extra lanes, base structures, tower hero-aggro, tower armor, ability aggro, shop/items, fog of war, networking, production UI/art, imported/skeletal animation clips, sound, or monetization. There is no generalized damage type or server authority yet. Obstacle/path navigation is intentionally deferred; direct steering remains behind semantic destination commands and the lane path API. Desktop pointer/keyboard input is only an adapter, so a future mobile touch adapter can emit the same semantic commands without rewriting combat or movement rules. Scaling beyond small development waves needs profiling and possibly a spatial index; the current roster scans its cached actor list for bounded-radius queries.

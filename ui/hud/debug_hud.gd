@@ -23,14 +23,17 @@ extends CanvasLayer
 @onready var _lane_label: Label = $Panel/Margin/VBox/LaneStatus
 @onready var _tower_label: Label = $Panel/Margin/VBox/TowerStatus
 @onready var _telemetry_label: Label = $Panel/Margin/VBox/Telemetry
-@onready var _ability_labels: Dictionary = {
-	&"q": $Panel/Margin/VBox/AbilityQ,
-	&"w": $Panel/Margin/VBox/AbilityW,
-	&"e": $Panel/Margin/VBox/AbilityE,
-	&"r": $Panel/Margin/VBox/AbilityR,
-}
+@onready var _update_left: float = 0.0
+var _ability_labels: Dictionary = {}
 
 func _ready() -> void:
+	visible = false
+	_ability_labels = {
+		&"q": get_node_or_null("Panel/Margin/VBox/AbilityQ"),
+		&"w": get_node_or_null("Panel/Margin/VBox/AbilityW"),
+		&"e": get_node_or_null("Panel/Margin/VBox/AbilityE"),
+		&"r": get_node_or_null("Panel/Margin/VBox/AbilityR"),
+	}
 	_player_stats.health_changed.connect(_on_player_health_changed)
 	_combat.target_changed.connect(_refresh_target)
 	_combat.attack_state_changed.connect(_on_attack_state_changed)
@@ -42,7 +45,11 @@ func _ready() -> void:
 	_on_command_state_changed(_player.command_state)
 	_on_attack_state_changed(0.0)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_update_left -= delta
+	if _update_left > 0.0:
+		return
+	_update_left = 0.15
 	var target_stats: ActorStats = _combat.get_target_stats()
 	if target_stats != null and target_stats.current_health > 0.0:
 		_target_label.text = "Target HP: %d / %d" % [roundi(target_stats.current_health), roundi(target_stats.max_health)]
@@ -92,6 +99,8 @@ func _on_attack_state_changed(remaining: float) -> void:
 
 func _update_ability_labels() -> void:
 	for ability_id in _ability_labels:
+		if not is_instance_valid(_ability_labels[ability_id]):
+			continue
 		var definition := _abilities.get_ability_definition(ability_id)
 		if definition == null:
 			_ability_labels[ability_id].text = "%s: unavailable" % String(ability_id).to_upper()

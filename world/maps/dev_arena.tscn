@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3]
+[gd_scene load_steps=45 format=3]
 
 [ext_resource type="Script" path="res://world/maps/dev_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://gameplay/actors/player_controller.gd" id="2_player"]
@@ -9,7 +9,7 @@
 [ext_resource type="Script" path="res://ui/hud/debug_hud.gd" id="7_hud"]
 [ext_resource type="Script" path="res://world/moba_camera.gd" id="8_camera"]
 [ext_resource type="Script" path="res://world/selection_feedback.gd" id="9_selection"]
-[ext_resource type="Resource" path="res://gameplay/heroes/vorn_test_hero.tres" id="10_hero"]
+[ext_resource type="Resource" path="res://gameplay/heroes/karn.tres" id="10_hero"]
 [ext_resource type="Script" path="res://gameplay/abilities/ability_controller.gd" id="11_abilities"]
 [ext_resource type="Script" path="res://gameplay/status/status_effect_controller.gd" id="12_status"]
 [ext_resource type="Script" path="res://gameplay/actors/hero_lifecycle.gd" id="13_lifecycle"]
@@ -24,16 +24,19 @@
 [ext_resource type="Resource" path="res://gameplay/lane/lane_prototype.tres" id="22_lane_tuning"]
 [ext_resource type="Resource" path="res://gameplay/lane/tower_prototype.tres" id="23_tower_tuning"]
 [ext_resource type="Script" path="res://gameplay/telemetry/playtest_telemetry.gd" id="24_telemetry"]
+[ext_resource type="Script" path="res://gameplay/presentation/ability_vfx.gd" id="25_ability_vfx"]
+[ext_resource type="Script" path="res://world/environment_dressing.gd" id="26_environment"]
+[ext_resource type="Script" path="res://ui/hud/moba_hud.gd" id="27_moba_hud"]
 
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
-background_color = Color(0.055, 0.075, 0.1, 1)
+background_color = Color(0.045, 0.078, 0.085, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.72, 0.78, 0.88, 1)
-ambient_light_energy = 0.8
+ambient_light_color = Color(0.66, 0.78, 0.73, 1)
+ambient_light_energy = 0.72
 
 [sub_resource type="StandardMaterial3D" id="Material_floor"]
-albedo_color = Color(0.16, 0.2, 0.23, 1)
+albedo_color = Color(0.12, 0.17, 0.15, 1)
 roughness = 1.0
 
 [sub_resource type="StandardMaterial3D" id="Material_dummy"]
@@ -45,11 +48,11 @@ albedo_color = Color(0.1, 0.65, 0.85, 0.42)
 transparency = 1
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
-size = Vector2(64, 16)
+size = Vector2(96, 58)
 material = SubResource("Material_floor")
 
 [sub_resource type="BoxShape3D" id="BoxShape_floor"]
-size = Vector3(64, 0.2, 16)
+size = Vector3(96, 0.2, 58)
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape_player"]
 radius = 0.48
@@ -129,12 +132,13 @@ light_energy = 1.2
 shadow_enabled = true
 
 [node name="CameraRig" type="Node3D" parent="."]
+position = Vector3(-10, 0, 0)
 script = ExtResource("8_camera")
 
 [node name="Camera3D" type="Camera3D" parent="CameraRig"]
-position = Vector3(0, 22, 16)
+position = Vector3(0, 20, 14.5)
 projection = 1
-size = 30.0
+size = 20.0
 current = true
 
 [node name="Floor" type="StaticBody3D" parent="."]
@@ -153,7 +157,7 @@ position = Vector3(0, -1, 0)
 shape = SubResource("WorldBoundary_arena")
 
 [node name="PlayerSpawn" type="MeshInstance3D" parent="."]
-position = Vector3(-24, 0.01, 0)
+position = Vector3(-16, 0.01, 0)
 mesh = SubResource("CylinderMesh_marker")
 
 [node name="EnemySpawn" type="MeshInstance3D" parent="."]
@@ -176,7 +180,7 @@ tuning = ExtResource("22_lane_tuning")
 tower_definition = ExtResource("23_tower_tuning")
 
 [node name="Player" type="CharacterBody3D" parent="."]
-position = Vector3(-24, 0.9, 0)
+position = Vector3(-16, 0.9, 0)
 script = ExtResource("2_player")
 hero_definition = ExtResource("10_hero")
 
@@ -196,8 +200,8 @@ script = ExtResource("19_attack")
 
 [node name="ActorReadability" type="Node3D" parent="Player"]
 script = ExtResource("20_readability")
-height_offset = 2.05
-bar_width = 1.6
+height_offset = 2.78
+bar_width = 2.0
 
 [node name="ActorPresentation" type="Node3D" parent="Player"]
 script = ExtResource("21_presentation")
@@ -207,6 +211,9 @@ script = ExtResource("24_telemetry")
 
 [node name="AbilityController" type="Node" parent="Player"]
 script = ExtResource("11_abilities")
+
+[node name="AbilityVFX" type="Node" parent="Player"]
+script = ExtResource("25_ability_vfx")
 
 [node name="StatusEffects" type="Node" parent="Player"]
 script = ExtResource("12_status")
@@ -249,7 +256,7 @@ actor_kind = &"dummy"
 
 [node name="ActorReadability" type="Node3D" parent="Dummy1"]
 script = ExtResource("20_readability")
-height_offset = 1.5
+height_offset = 2.05
 
 [node name="SelectionRing" type="MeshInstance3D" parent="Dummy1"]
 position = Vector3(0, -0.74, 0)
@@ -280,7 +287,7 @@ actor_kind = &"dummy"
 
 [node name="ActorReadability" type="Node3D" parent="Dummy2"]
 script = ExtResource("20_readability")
-height_offset = 1.5
+height_offset = 2.05
 
 [node name="SelectionRing" type="MeshInstance3D" parent="Dummy2"]
 position = Vector3(0, -0.74, 0)
@@ -311,7 +318,7 @@ actor_kind = &"dummy"
 
 [node name="ActorReadability" type="Node3D" parent="Dummy3"]
 script = ExtResource("20_readability")
-height_offset = 1.5
+height_offset = 2.05
 
 [node name="SelectionRing" type="MeshInstance3D" parent="Dummy3"]
 position = Vector3(0, -0.74, 0)
@@ -419,16 +426,16 @@ theme_override_font_sizes/font_size = 14
 text = "ABILITIES"
 
 [node name="AbilityQ" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "Q — Targeted Strike: READY (60 mana)"
+text = "Q — Rend: READY (60 mana)"
 
 [node name="AbilityW" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "W — Line Projectile: READY (80 mana)"
+text = "W — Breakline: READY (80 mana)"
 
 [node name="AbilityE" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "E — Area Damage: READY (70 mana)"
+text = "E — War Ring: READY (70 mana)"
 
 [node name="AbilityR" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "R — Overdrive: READY (120 mana)"
+text = "R — Redline: READY (120 mana)"
 
 [node name="TargetingMode" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Targeting: None"
@@ -452,3 +459,9 @@ text = "Playtest · last hits 0 · avg attack — · move 6.0 · wave 0 · gold 
 
 [node name="Help" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Q/W/E then LMB · RMB/Esc cancel · R self · RMB commands · S stop"
+
+[node name="EnvironmentDressing" type="Node3D" parent="."]
+script = ExtResource("26_environment")
+
+[node name="MobaHUD" type="CanvasLayer" parent="."]
+script = ExtResource("27_moba_hud")

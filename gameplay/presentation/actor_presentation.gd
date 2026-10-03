@@ -5,6 +5,7 @@ extends Node3D
 enum VisualState { IDLE, MOVE, ATTACK_WINDUP, ATTACK_RELEASE, ATTACK_RECOVERY, CAST, HIT, DEATH }
 
 const HIT_MATERIAL: Material = preload("res://gameplay/presentation/materials/hit_flash.tres")
+const SLASH_MATERIAL: Material = preload("res://gameplay/presentation/materials/vfx_rend.tres")
 
 signal visual_state_changed(state: VisualState, detail: StringName)
 signal actor_died
@@ -25,6 +26,10 @@ var _progression: HeroProgression
 var _lifecycle: HeroLifecycle
 var _visual: Node3D
 var _model: Node3D
+var _torso: Node3D
+var _weapon_pivot: Node3D
+var _shoulder_left: Node3D
+var _attack_slash: MeshInstance3D
 var _arm_left: Node3D
 var _arm_right: Node3D
 var _leg_left: Node3D
@@ -77,13 +82,21 @@ func _process(delta: float) -> void:
 		_refresh_from_gameplay()
 	if current_state == VisualState.MOVE:
 		var swing := sin(_motion_clock * 11.0) * 0.34
+		_model.rotation.z = move_toward(_model.rotation.z, -0.045, step * 0.8)
+		if _torso != null:
+			_torso.rotation.x = sin(_motion_clock * 5.5) * 0.035
+		if _weapon_pivot != null:
+			_weapon_pivot.rotation.z = sin(_motion_clock * 5.5) * 0.08
 		if _arm_left != null:
 			_arm_left.rotation.x = swing
 			_arm_right.rotation.x = -swing
 			_leg_left.rotation.x = -swing * 0.8
 			_leg_right.rotation.x = swing * 0.8
 	else:
-		_model.scale.y = 1.0 + (sin(_motion_clock * 3.2) * 0.012 if current_state == VisualState.IDLE else 0.0)
+		_model.rotation.z = move_toward(_model.rotation.z, 0.0, step * 1.5)
+		_model.scale.y = 1.0 + (sin(_motion_clock * 3.2) * 0.018 if current_state == VisualState.IDLE else 0.0)
+		if _torso != null and current_state == VisualState.IDLE:
+			_torso.rotation.x = sin(_motion_clock * 3.2) * 0.025
 		if _arm_left != null:
 			_arm_left.rotation.x = move_toward(_arm_left.rotation.x, 0.0, step * 2.0)
 			_arm_right.rotation.x = move_toward(_arm_right.rotation.x, 0.0, step * 2.0)
@@ -110,6 +123,9 @@ func _build_placeholder() -> void:
 		_:
 			return
 	_visual.add_child(_model)
+	_torso = _model.get_node_or_null("Torso") as Node3D
+	_weapon_pivot = _model.get_node_or_null("WeaponPivot") as Node3D
+	_shoulder_left = _model.get_node_or_null("ShoulderLeft") as Node3D
 	_arm_left = _model.get_node_or_null("ArmLeft") as Node3D
 	_arm_right = _model.get_node_or_null("ArmRight") as Node3D
 	_leg_left = _model.get_node_or_null("LegLeft") as Node3D
@@ -121,26 +137,49 @@ func _build_hit_marker() -> void:
 		return
 	_hit_marker = MeshInstance3D.new()
 	_hit_marker.name = "HitFlash"
-	var mesh := SphereMesh.new()
-	mesh.radius = 0.8
-	mesh.height = 1.6
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = 0.48
+	mesh.outer_radius = 0.58
 	_hit_marker.mesh = mesh
+	_hit_marker.rotation_degrees.x = 90.0
+	_hit_marker.position.y = 0.75
 	_hit_marker.material_override = HIT_MATERIAL
 	_hit_marker.visible = false
 	_visual.add_child(_hit_marker)
+	_attack_slash = MeshInstance3D.new()
+	_attack_slash.name = "BasicSlashFlash"
+	var slash_mesh := BoxMesh.new()
+	slash_mesh.size = Vector3(0.16, 0.3, 1.65)
+	_attack_slash.mesh = slash_mesh
+	_attack_slash.material_override = SLASH_MATERIAL
+	_attack_slash.position = Vector3(0.64, 1.2, -0.72)
+	_attack_slash.visible = false
+	_visual.add_child(_attack_slash)
 
 func _on_attack_state_changed(attack_state: int, _progress: float, _target: Node3D, _time_left: float) -> void:
 	match attack_state:
 		BasicAttackController.State.WINDUP:
 			_set_state(VisualState.ATTACK_WINDUP)
 			if _model != null:
-				_model.rotation.z = -0.12
+				_model.rotation.z = -0.14
+			if _torso != null:
+				_torso.rotation.x = -0.12
+			if _weapon_pivot != null:
+				_weapon_pivot.rotation.z = -0.92
+			if _shoulder_left != null:
+				_shoulder_left.rotation.z = 0.2
 			if _tower_emitter != null:
 				_tower_emitter.scale = Vector3.ONE * 1.18
 		BasicAttackController.State.RELEASE:
 			_set_state(VisualState.ATTACK_RELEASE)
 			if _model != null:
-				_model.rotation.z = 0.18
+				_model.rotation.z = 0.22
+			if _torso != null:
+				_torso.rotation.x = 0.22
+			if _weapon_pivot != null:
+				_weapon_pivot.rotation.z = 1.05
+			if _identity != null and _identity.actor_kind == &"hero":
+				_show_attack_slash()
 			if _tower_emitter != null:
 				_tower_emitter.scale = Vector3.ONE * 1.55
 				var pulse := create_tween()
@@ -149,13 +188,19 @@ func _on_attack_state_changed(attack_state: int, _progress: float, _target: Node
 			_set_state(VisualState.ATTACK_RECOVERY)
 			if _model != null:
 				_model.rotation.z = 0.06
+			if _weapon_pivot != null:
+				_weapon_pivot.rotation.z = move_toward(_weapon_pivot.rotation.z, 0.0, 0.5)
 		BasicAttackController.State.IDLE:
 			if _model != null:
 				_model.rotation.z = 0.0
+			if _weapon_pivot != null:
+				_weapon_pivot.rotation.z = 0.0
+			if _shoulder_left != null:
+				_shoulder_left.rotation.z = 0.0
 			_refresh_from_gameplay()
 
 func _on_damage_received(event: DamageEvent) -> void:
-	if event == null or not is_instance_valid(_hit_marker):
+	if event == null or not is_instance_valid(_hit_marker) or (_identity != null and _identity.actor_kind == &"minion"):
 		return
 	_hit_marker.visible = true
 	_timed_state_remaining = hit_state_duration
@@ -165,6 +210,10 @@ func _on_damage_received(event: DamageEvent) -> void:
 
 func _on_died() -> void:
 	_dead = true
+	if is_instance_valid(_hit_marker):
+		_hit_marker.hide()
+	if is_instance_valid(_attack_slash):
+		_attack_slash.hide()
 	_timed_state_remaining = 0.0
 	actor_died.emit()
 	_set_state(VisualState.DEATH)
@@ -191,6 +240,10 @@ func _on_ability_cast(ability_id: StringName, _target: Node3D, _point: Vector3) 
 	_set_state(VisualState.CAST, ability_id)
 	if _arm_right != null:
 		_arm_right.rotation.x = -0.55
+	if _torso != null:
+		_torso.rotation.z = 0.14
+	if _weapon_pivot != null:
+		_weapon_pivot.rotation.z = -0.38 if ability_id == &"q" else -0.18
 
 func _on_command_state_changed(_command_state: int) -> void:
 	_refresh_from_gameplay()
@@ -222,6 +275,20 @@ func _on_level_up(level: int) -> void:
 	tween.parallel().tween_property(label, "modulate:a", 0.0, 0.85)
 	tween.tween_callback(ring.queue_free)
 	tween.tween_callback(label.queue_free)
+
+func _show_attack_slash() -> void:
+	if not is_instance_valid(_attack_slash):
+		return
+	_attack_slash.visible = true
+	_attack_slash.scale = Vector3(0.3, 0.7, 0.65)
+	var flash := _attack_slash.create_tween()
+	flash.tween_property(_attack_slash, "scale", Vector3(1.0, 1.0, 1.35), 0.12)
+	flash.parallel().tween_property(_attack_slash, "transparency", 1.0, 0.14)
+	flash.tween_callback(func() -> void:
+		if is_instance_valid(_attack_slash):
+			_attack_slash.visible = false
+			_attack_slash.transparency = 0.0
+	)
 
 func _hide_dead_visual() -> void:
 	if _dead and is_instance_valid(_visual):

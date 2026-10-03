@@ -2,7 +2,10 @@ class_name HeroDefinition
 extends Resource
 ## Small data asset for one playable hero prototype.
 
-@export var hero_name: String = "VORN_TEST_HERO"
+@export var hero_name: String = "KARN"
+@export var role: String = "Melee Bruiser"
+@export var visual_theme: String = "Ash-forged iron and ember oath"
+@export_multiline var internal_lore: String = "A front-line duelist who turns every retreat into a shorter path toward the next strike."
 @export_range(1.0, 10000.0, 1.0) var max_health: float = 1000.0
 @export_range(0.0, 10000.0, 1.0) var max_mana: float = 500.0
 @export_range(0.0, 1000.0, 0.1) var health_regeneration: float = 2.0

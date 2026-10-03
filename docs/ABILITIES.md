@@ -19,14 +19,14 @@ Q/W/E enter targeting mode when requested. Left-click confirms. Right-click or E
 
 ## Prototype hero kit
 
-The temporary resource at `gameplay/heroes/vorn_test_hero.tres` is named `VORN_TEST_HERO`.
+The temporary resource at `gameplay/heroes/karn.tres` is named `KARN`.
 
 | Key | Ability | Type | Cost | Cooldown | Range | Effect |
 |---|---|---|---:|---:|---:|---|
-| Q | Targeted Strike | Targeted | 60 mana | 5 s | 8 | Instantly deals 120 damage to the confirmed enemy. |
-| W | Line Projectile | Point | 80 mana | 8 s | 12 | Fires a debug projectile at 14 units/s; it damages the first live enemy hit for 150, or disappears at max travel distance. |
-| E | Area Damage | Area | 70 mana | 10 s | 9 | Deals 90 damage to each live enemy within 3 units of the confirmed point. |
-| R | Overdrive | Self | 120 mana | 35 s | — | For 6 s, movement speed is multiplied by 1.3 and basic attack interval by 0.7. |
+| Q | Rend | Targeted | 60 mana | 5 s | 8 | Instantly deals 120 damage to the confirmed enemy. |
+| W | Breakline | Point | 80 mana | 8 s | 12 | Fires a debug projectile at 14 units/s; it damages the first live enemy hit for 150, or disappears at max travel distance. |
+| E | War Ring | Area | 70 mana | 10 s | 9 | Deals 90 damage to each live enemy within 3 units of the confirmed point. |
+| R | Redline | Self | 120 mana | 35 s | — | For 6 s, movement speed is multiplied by 1.3 and basic attack interval by 0.7. |
 
 Values live in `.tres` resources and are prototype tuning, not final hero balance.
 
