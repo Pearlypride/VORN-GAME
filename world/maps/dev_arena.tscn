@@ -1,0 +1,278 @@
+[gd_scene load_steps=27 format=3]
+
+[ext_resource type="Script" path="res://world/maps/dev_arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://gameplay/actors/player_controller.gd" id="2_player"]
+[ext_resource type="Script" path="res://gameplay/stats/actor_stats.gd" id="3_stats"]
+[ext_resource type="Script" path="res://gameplay/combat/combat_component.gd" id="4_combat"]
+[ext_resource type="Script" path="res://gameplay/actors/dummy_target.gd" id="5_dummy"]
+[ext_resource type="Script" path="res://input/arena_input.gd" id="6_input"]
+[ext_resource type="Script" path="res://ui/hud/debug_hud.gd" id="7_hud"]
+[ext_resource type="Script" path="res://world/moba_camera.gd" id="8_camera"]
+[ext_resource type="Script" path="res://world/selection_feedback.gd" id="9_selection"]
+
+[sub_resource type="Environment" id="Environment_arena"]
+background_mode = 1
+background_color = Color(0.055, 0.075, 0.1, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.72, 0.78, 0.88, 1)
+ambient_light_energy = 0.8
+
+[sub_resource type="StandardMaterial3D" id="Material_floor"]
+albedo_color = Color(0.16, 0.2, 0.23, 1)
+roughness = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Material_player"]
+albedo_color = Color(0.12, 0.65, 0.92, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Material_dummy"]
+albedo_color = Color(0.9, 0.31, 0.19, 1)
+roughness = 0.7
+
+[sub_resource type="StandardMaterial3D" id="Material_spawn"]
+albedo_color = Color(0.1, 0.65, 0.85, 0.42)
+transparency = 1
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
+size = Vector2(30, 30)
+material = SubResource("Material_floor")
+
+[sub_resource type="BoxShape3D" id="BoxShape_floor"]
+size = Vector3(30, 0.2, 30)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_player"]
+radius = 0.48
+height = 1.8
+material = SubResource("Material_player")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape_player"]
+radius = 0.48
+height = 1.8
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_dummy"]
+top_radius = 0.62
+bottom_radius = 0.62
+height = 1.6
+material = SubResource("Material_dummy")
+
+[sub_resource type="CylinderShape3D" id="CylinderShape_dummy"]
+radius = 0.62
+height = 1.6
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_marker"]
+top_radius = 0.85
+bottom_radius = 0.85
+height = 0.04
+material = SubResource("Material_spawn")
+
+[sub_resource type="WorldBoundaryShape3D" id="WorldBoundary_arena"]
+
+[sub_resource type="StandardMaterial3D" id="Material_selection"]
+albedo_color = Color(1, 0.78, 0.12, 1)
+roughness = 0.45
+
+[sub_resource type="TorusMesh" id="TorusMesh_selection"]
+inner_radius = 0.7
+outer_radius = 0.78
+
+[sub_resource type="StandardMaterial3D" id="Material_move"]
+albedo_color = Color(0.2, 0.9, 0.8, 0.85)
+transparency = 1
+roughness = 0.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_move"]
+top_radius = 0.55
+bottom_radius = 0.55
+height = 0.035
+material = SubResource("Material_move")
+
+[node name="Arena" type="Node3D"]
+script = ExtResource("1_arena")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_arena")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55, -30, 0)
+light_color = Color(0.88, 0.92, 1, 1)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("8_camera")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+position = Vector3(0, 20, 17)
+projection = 1
+size = 22.0
+current = true
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.1, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("PlaneMesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape_floor")
+
+[node name="ArenaBounds" type="StaticBody3D" parent="."]
+position = Vector3(0, -1, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ArenaBounds"]
+shape = SubResource("WorldBoundary_arena")
+
+[node name="PlayerSpawn" type="MeshInstance3D" parent="."]
+position = Vector3(-4, 0.01, 0)
+mesh = SubResource("CylinderMesh_marker")
+
+[node name="EnemySpawn" type="MeshInstance3D" parent="."]
+position = Vector3(4, 0.01, 0)
+mesh = SubResource("CylinderMesh_marker")
+
+[node name="EnemySpawn2" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.01, 6)
+mesh = SubResource("CylinderMesh_marker")
+
+[node name="EnemySpawn3" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.01, -6)
+mesh = SubResource("CylinderMesh_marker")
+
+[node name="Player" type="CharacterBody3D" parent="."]
+position = Vector3(-4, 0.9, 0)
+script = ExtResource("2_player")
+
+[node name="Visual" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("CapsuleMesh_player")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
+shape = SubResource("CapsuleShape_player")
+
+[node name="Stats" type="Node" parent="Player"]
+script = ExtResource("3_stats")
+max_health = 100.0
+movement_speed = 5.5
+attack_damage = 20.0
+attack_range = 2.2
+attack_cooldown = 0.8
+
+[node name="Combat" type="Node" parent="Player"]
+script = ExtResource("4_combat")
+
+[node name="Dummy1" type="StaticBody3D" parent="." groups=["combat_target"]]
+position = Vector3(4, 0.8, 0)
+script = ExtResource("5_dummy")
+
+[node name="Visual" type="MeshInstance3D" parent="Dummy1"]
+mesh = SubResource("CylinderMesh_dummy")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Dummy1"]
+shape = SubResource("CylinderShape_dummy")
+
+[node name="Stats" type="Node" parent="Dummy1"]
+script = ExtResource("3_stats")
+max_health = 120.0
+movement_speed = 0.0
+attack_damage = 0.0
+
+[node name="SelectionRing" type="MeshInstance3D" parent="Dummy1"]
+position = Vector3(0, -0.74, 0)
+visible = false
+mesh = SubResource("TorusMesh_selection")
+surface_material_override/0 = SubResource("Material_selection")
+
+[node name="Dummy2" type="StaticBody3D" parent="." groups=["combat_target"]]
+position = Vector3(0, 0.8, 6)
+script = ExtResource("5_dummy")
+
+[node name="Visual" type="MeshInstance3D" parent="Dummy2"]
+mesh = SubResource("CylinderMesh_dummy")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Dummy2"]
+shape = SubResource("CylinderShape_dummy")
+
+[node name="Stats" type="Node" parent="Dummy2"]
+script = ExtResource("3_stats")
+max_health = 120.0
+movement_speed = 0.0
+attack_damage = 0.0
+
+[node name="SelectionRing" type="MeshInstance3D" parent="Dummy2"]
+position = Vector3(0, -0.74, 0)
+visible = false
+mesh = SubResource("TorusMesh_selection")
+surface_material_override/0 = SubResource("Material_selection")
+
+[node name="Dummy3" type="StaticBody3D" parent="." groups=["combat_target"]]
+position = Vector3(0, 0.8, -6)
+script = ExtResource("5_dummy")
+
+[node name="Visual" type="MeshInstance3D" parent="Dummy3"]
+mesh = SubResource("CylinderMesh_dummy")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Dummy3"]
+shape = SubResource("CylinderShape_dummy")
+
+[node name="Stats" type="Node" parent="Dummy3"]
+script = ExtResource("3_stats")
+max_health = 120.0
+movement_speed = 0.0
+attack_damage = 0.0
+
+[node name="SelectionRing" type="MeshInstance3D" parent="Dummy3"]
+position = Vector3(0, -0.74, 0)
+visible = false
+mesh = SubResource("TorusMesh_selection")
+surface_material_override/0 = SubResource("Material_selection")
+
+[node name="MoveMarker" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.025, 0)
+visible = false
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_move")
+
+[node name="MoveMarkerTimer" type="Timer" parent="."]
+wait_time = 1.25
+one_shot = true
+
+[node name="ArenaInput" type="Node" parent="."]
+script = ExtResource("6_input")
+
+[node name="SelectionFeedback" type="Node" parent="."]
+script = ExtResource("9_selection")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("7_hud")
+
+[node name="Panel" type="PanelContainer" parent="HUD"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 390.0
+offset_bottom = 210.0
+
+[node name="Margin" type="MarginContainer" parent="HUD/Panel"]
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Panel/Margin"]
+theme_override_constants/separation = 7
+
+[node name="PlayerHealth" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Player HP: 100 / 100"
+
+[node name="Selection" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Selected: None"
+
+[node name="TargetHealth" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Target HP: —"
+
+[node name="CommandState" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Command: IDLE"
+
+[node name="CombatState" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Attack: ready"
+
+[node name="Help" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "RMB move/attack · S stop · Esc clear · MMB pan · Wheel zoom"
