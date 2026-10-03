@@ -13,6 +13,7 @@ var _target_stats: ActorStats
 
 func _ready() -> void:
 	_actor_stats = get_node(actor_stats_path) as ActorStats
+	_actor_stats.died.connect(_on_owner_died)
 
 func _physics_process(delta: float) -> void:
 	cooldown_remaining = maxf(0.0, cooldown_remaining - delta)
@@ -27,10 +28,12 @@ func _physics_process(delta: float) -> void:
 	if distance > _actor_stats.attack_range or cooldown_remaining > 0.0:
 		return
 	_target_stats.apply_damage(_actor_stats.attack_damage)
-	cooldown_remaining = _actor_stats.attack_cooldown
+	cooldown_remaining = _actor_stats.get_effective_attack_cooldown()
 	attack_state_changed.emit(cooldown_remaining)
 
 func set_target(new_target: Node3D) -> void:
+	if _actor_stats.current_health <= 0.0:
+		new_target = null
 	var new_stats: ActorStats
 	if new_target != null:
 		if not is_instance_valid(new_target) or not new_target.is_inside_tree():
@@ -54,6 +57,11 @@ func get_target_stats() -> ActorStats:
 	return _target_stats
 
 func _on_target_died() -> void:
+	cooldown_remaining = 0.0
+	attack_state_changed.emit(0.0)
+	set_target(null)
+
+func _on_owner_died() -> void:
 	cooldown_remaining = 0.0
 	attack_state_changed.emit(0.0)
 	set_target(null)

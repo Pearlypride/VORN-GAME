@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://gameplay/abilities/ability_definition.gd" id="1_definition"]
+[ext_resource type="Script" path="res://gameplay/abilities/effects/projectile_effect.gd" id="2_effect"]
+[ext_resource type="PackedScene" path="res://gameplay/abilities/projectile.tscn" id="3_projectile"]
+
+[sub_resource type="Resource" id="LineProjectileEffect"]
+script = ExtResource("2_effect")
+damage = 150.0
+projectile_scene = ExtResource("3_projectile")
+
+[resource]
+script = ExtResource("1_definition")
+ability_id = &"w"
+display_name = "Line Projectile"
+cast_type = 1
+mana_cost = 80.0
+cooldown = 8.0
+cast_range = 12.0
+effect = SubResource("LineProjectileEffect")

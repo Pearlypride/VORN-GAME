@@ -3,24 +3,37 @@ extends CanvasLayer
 @onready var _player_stats: ActorStats = get_node("../Player/Stats") as ActorStats
 @onready var _combat: CombatComponent = get_node("../Player/Combat") as CombatComponent
 @onready var _player: PlayerController = get_node("../Player") as PlayerController
+@onready var _abilities: AbilityController = get_node("../Player/AbilityController") as AbilityController
+@onready var _status_effects: StatusEffectController = get_node("../Player/StatusEffects") as StatusEffectController
 @onready var _player_label: Label = $Panel/Margin/VBox/PlayerHealth
+@onready var _mana_label: Label = $Panel/Margin/VBox/PlayerMana
 @onready var _selection_label: Label = $Panel/Margin/VBox/Selection
 @onready var _target_label: Label = $Panel/Margin/VBox/TargetHealth
 @onready var _command_label: Label = $Panel/Margin/VBox/CommandState
 @onready var _combat_label: Label = $Panel/Margin/VBox/CombatState
+@onready var _targeting_label: Label = $Panel/Margin/VBox/TargetingMode
+@onready var _buff_label: Label = $Panel/Margin/VBox/RBuff
+@onready var _ability_labels: Dictionary = {
+	&"q": $Panel/Margin/VBox/AbilityQ,
+	&"w": $Panel/Margin/VBox/AbilityW,
+	&"e": $Panel/Margin/VBox/AbilityE,
+	&"r": $Panel/Margin/VBox/AbilityR,
+}
 
 func _ready() -> void:
 	_player_stats.health_changed.connect(_on_player_health_changed)
 	_combat.target_changed.connect(_refresh_target)
 	_combat.attack_state_changed.connect(_on_attack_state_changed)
 	_player.command_state_changed.connect(_on_command_state_changed)
+	_player_stats.mana_changed.connect(_on_mana_changed)
 	_on_player_health_changed(_player_stats.current_health, _player_stats.max_health)
+	_on_mana_changed(_player_stats.current_mana, _player_stats.max_mana)
 	_refresh_target(_combat.target)
 	_on_command_state_changed(_player.command_state)
 	_on_attack_state_changed(0.0)
 
 func _process(_delta: float) -> void:
-	var target_stats := _combat.get_target_stats()
+	var target_stats: ActorStats = _combat.get_target_stats()
 	if target_stats != null and target_stats.current_health > 0.0:
 		_target_label.text = "Target HP: %d / %d" % [roundi(target_stats.current_health), roundi(target_stats.max_health)]
 	elif _combat.target != null:
@@ -29,9 +42,21 @@ func _process(_delta: float) -> void:
 		_combat_label.text = "Attack cooldown: %.1fs" % _combat.cooldown_remaining
 	else:
 		_combat_label.text = "Attack: ready"
+	_update_ability_labels()
+	if _abilities.is_targeting():
+		var definition := _abilities.get_ability_definition(_abilities.current_targeting_ability)
+		_targeting_label.text = "Targeting: %s" % definition.display_name if definition != null else "Targeting: —"
+	else:
+		_targeting_label.text = "Targeting: None"
+	var buff_remaining := _status_effects.get_remaining(&"r_surge")
+	_buff_label.text = "R buff: %.1fs" % buff_remaining if buff_remaining > 0.0 else "R buff: inactive"
 
 func _on_player_health_changed(current: float, maximum: float) -> void:
-	_player_label.text = "Player HP: %d / %d" % [roundi(current), roundi(maximum)]
+	var hero_name := _player.hero_definition.hero_name if _player.hero_definition != null else "Hero"
+	_player_label.text = "%s HP: %d / %d" % [hero_name, roundi(current), roundi(maximum)]
+
+func _on_mana_changed(current: float, maximum: float) -> void:
+	_mana_label.text = "Mana: %d / %d" % [roundi(current), roundi(maximum)]
 
 func _refresh_target(target: Node3D) -> void:
 	if target == null or _combat.get_target_stats() == null:
@@ -40,7 +65,7 @@ func _refresh_target(target: Node3D) -> void:
 		return
 	var target_type := "Enemy" if target.is_in_group("combat_target") else "Actor"
 	_selection_label.text = "Selected: %s (%s)" % [target.name, target_type]
-	var stats := _combat.get_target_stats()
+	var stats: ActorStats = _combat.get_target_stats()
 	_target_label.text = "Target HP: %d / %d" % [roundi(stats.current_health), roundi(stats.max_health)]
 
 func _on_command_state_changed(_state: int) -> void:
@@ -48,3 +73,17 @@ func _on_command_state_changed(_state: int) -> void:
 
 func _on_attack_state_changed(remaining: float) -> void:
 	_combat_label.text = "Attack: ready" if remaining <= 0.0 else "Attack cooldown: %.1fs" % remaining
+
+func _update_ability_labels() -> void:
+	for ability_id in _ability_labels:
+		var definition := _abilities.get_ability_definition(ability_id)
+		if definition == null:
+			_ability_labels[ability_id].text = "%s: unavailable" % String(ability_id).to_upper()
+			continue
+		var state: AbilityController.AbilityState = _abilities.get_ability_state(ability_id)
+		var state_name: String = AbilityController.AbilityState.keys()[state]
+		if state == AbilityController.AbilityState.COOLDOWN:
+			state_name += " %.1fs" % _abilities.get_cooldown_remaining(ability_id)
+		elif _player_stats.current_mana < definition.mana_cost:
+			state_name = "NO MANA"
+		_ability_labels[ability_id].text = "%s — %s: %s (%.0f mana)" % [String(ability_id).to_upper(), definition.display_name, state_name, definition.mana_cost]

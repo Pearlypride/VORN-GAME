@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ProjectileEffect" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://gameplay/abilities/effects/projectile_effect.gd" id="1_effect"]
+[ext_resource type="PackedScene" path="res://gameplay/abilities/projectile.tscn" id="2_projectile"]
+
+[resource]
+script = ExtResource("1_effect")
+damage = 150.0
+projectile_scene = ExtResource("2_projectile")

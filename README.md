@@ -16,10 +16,11 @@ For a headless project parse/import check:
 godot --headless --path . --editor --quit
 ```
 
-Run the Phase 2 automated checks with:
+Run the automated Phase 2 and Phase 3 checks with:
 
 ```sh
 godot --headless --path . --script res://tests/phase2_validation.gd
+godot --headless --path . --script res://tests/phase3_ability_validation.gd
 ```
 
 ## Controls
@@ -30,6 +31,11 @@ godot --headless --path . --script res://tests/phase2_validation.gd
 - **Esc:** clear the selected target and current interaction
 - **Middle-mouse drag:** pan the fixed-pitch MOBA camera
 - **Mouse wheel:** zoom within configured limits
+- **Q:** enter targeted-strike mode; left-click an enemy to cast
+- **W:** enter projectile aim mode; left-click a point to fire
+- **E:** enter area targeting; left-click a ground point to cast
+- **R:** cast Overdrive on self immediately
+- **Right-click or Esc while targeting Q/W/E:** cancel targeting mode
 
 ## Implemented
 
@@ -38,6 +44,9 @@ godot --headless --path . --script res://tests/phase2_validation.gd
 - Reusable actor health and combat stat component
 - Independent targeting, health, death and respawn for three primitive dummies
 - Selection ring, short-lived move marker, and camera pan/zoom
-- Debug HUD for player HP, target name/type and HP, command state and attack cooldown
+- `VORN_TEST_HERO` data resource, health/mana stats and regeneration
+- Q targeted damage, W first-hit projectile, E area damage, and R temporary movement/attack-speed buff
+- Development hero death and full-resource respawn loop
+- Debug HUD for HP/mana, target, command state, Q/W/E/R states, targeting mode and R buff timer
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the current scene and gameplay boundaries.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/ABILITIES.md](docs/ABILITIES.md) for architecture and ability lifecycle details.

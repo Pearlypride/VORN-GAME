@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://gameplay/abilities/ability_definition.gd" id="1_definition"]
+[ext_resource type="Script" path="res://gameplay/abilities/effects/area_damage_effect.gd" id="2_effect"]
+
+[sub_resource type="Resource" id="AreaDamageEffect"]
+script = ExtResource("2_effect")
+damage = 90.0
+radius = 3.0
+
+[resource]
+script = ExtResource("1_definition")
+ability_id = &"e"
+display_name = "Area Damage"
+cast_type = 2
+mana_cost = 70.0
+cooldown = 10.0
+cast_range = 9.0
+effect = SubResource("AreaDamageEffect")

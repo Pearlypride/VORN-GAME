@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=38 format=3]
 
 [ext_resource type="Script" path="res://world/maps/dev_arena.gd" id="1_arena"]
 [ext_resource type="Script" path="res://gameplay/actors/player_controller.gd" id="2_player"]
@@ -9,6 +9,11 @@
 [ext_resource type="Script" path="res://ui/hud/debug_hud.gd" id="7_hud"]
 [ext_resource type="Script" path="res://world/moba_camera.gd" id="8_camera"]
 [ext_resource type="Script" path="res://world/selection_feedback.gd" id="9_selection"]
+[ext_resource type="Resource" path="res://gameplay/heroes/vorn_test_hero.tres" id="10_hero"]
+[ext_resource type="Script" path="res://gameplay/abilities/ability_controller.gd" id="11_abilities"]
+[ext_resource type="Script" path="res://gameplay/status/status_effect_controller.gd" id="12_status"]
+[ext_resource type="Script" path="res://gameplay/actors/hero_lifecycle.gd" id="13_lifecycle"]
+[ext_resource type="Script" path="res://world/ability_targeting_feedback.gd" id="14_ability_feedback"]
 
 [sub_resource type="Environment" id="Environment_arena"]
 background_mode = 1
@@ -86,6 +91,30 @@ bottom_radius = 0.55
 height = 0.035
 material = SubResource("Material_move")
 
+[sub_resource type="StandardMaterial3D" id="Material_cast_range"]
+albedo_color = Color(0.25, 0.75, 1, 0.8)
+transparency = 1
+
+[sub_resource type="TorusMesh" id="TorusMesh_cast_range"]
+inner_radius = 0.96
+outer_radius = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Material_area_radius"]
+albedo_color = Color(1, 0.55, 0.18, 0.8)
+transparency = 1
+
+[sub_resource type="TorusMesh" id="TorusMesh_area_radius"]
+inner_radius = 0.94
+outer_radius = 1.0
+
+[sub_resource type="StandardMaterial3D" id="Material_aim_line"]
+albedo_color = Color(0.25, 0.95, 0.8, 0.9)
+transparency = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_aim_line"]
+size = Vector3(0.045, 0.045, 1)
+material = SubResource("Material_aim_line")
+
 [node name="Arena" type="Node3D"]
 script = ExtResource("1_arena")
 
@@ -141,6 +170,7 @@ mesh = SubResource("CylinderMesh_marker")
 [node name="Player" type="CharacterBody3D" parent="."]
 position = Vector3(-4, 0.9, 0)
 script = ExtResource("2_player")
+hero_definition = ExtResource("10_hero")
 
 [node name="Visual" type="MeshInstance3D" parent="Player"]
 mesh = SubResource("CapsuleMesh_player")
@@ -158,6 +188,15 @@ attack_cooldown = 0.8
 
 [node name="Combat" type="Node" parent="Player"]
 script = ExtResource("4_combat")
+
+[node name="AbilityController" type="Node" parent="Player"]
+script = ExtResource("11_abilities")
+
+[node name="StatusEffects" type="Node" parent="Player"]
+script = ExtResource("12_status")
+
+[node name="HeroLifecycle" type="Node" parent="Player"]
+script = ExtResource("13_lifecycle")
 
 [node name="Dummy1" type="StaticBody3D" parent="." groups=["combat_target"]]
 position = Vector3(4, 0.8, 0)
@@ -241,14 +280,36 @@ script = ExtResource("6_input")
 [node name="SelectionFeedback" type="Node" parent="."]
 script = ExtResource("9_selection")
 
+[node name="AbilityTargetingFeedback" type="Node3D" parent="."]
+script = ExtResource("14_ability_feedback")
+
+[node name="CastRangeRing" type="MeshInstance3D" parent="AbilityTargetingFeedback"]
+visible = false
+mesh = SubResource("TorusMesh_cast_range")
+surface_material_override/0 = SubResource("Material_cast_range")
+
+[node name="CastPointMarker" type="MeshInstance3D" parent="AbilityTargetingFeedback"]
+visible = false
+mesh = SubResource("CylinderMesh_move")
+
+[node name="AreaRadiusRing" type="MeshInstance3D" parent="AbilityTargetingFeedback"]
+visible = false
+mesh = SubResource("TorusMesh_area_radius")
+surface_material_override/0 = SubResource("Material_area_radius")
+
+[node name="AimLine" type="MeshInstance3D" parent="AbilityTargetingFeedback"]
+visible = false
+cast_shadow = 0
+mesh = SubResource("BoxMesh_aim_line")
+
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("7_hud")
 
 [node name="Panel" type="PanelContainer" parent="HUD"]
 offset_left = 20.0
 offset_top = 20.0
-offset_right = 390.0
-offset_bottom = 210.0
+offset_right = 470.0
+offset_bottom = 430.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 theme_override_constants/margin_left = 12
@@ -262,6 +323,9 @@ theme_override_constants/separation = 7
 [node name="PlayerHealth" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Player HP: 100 / 100"
 
+[node name="PlayerMana" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Mana: 500 / 500"
+
 [node name="Selection" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Selected: None"
 
@@ -274,5 +338,23 @@ text = "Command: IDLE"
 [node name="CombatState" type="Label" parent="HUD/Panel/Margin/VBox"]
 text = "Attack: ready"
 
+[node name="AbilityQ" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Q — Targeted Strike: READY (60 mana)"
+
+[node name="AbilityW" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "W — Line Projectile: READY (80 mana)"
+
+[node name="AbilityE" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "E — Area Damage: READY (70 mana)"
+
+[node name="AbilityR" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "R — Overdrive: READY (120 mana)"
+
+[node name="TargetingMode" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "Targeting: None"
+
+[node name="RBuff" type="Label" parent="HUD/Panel/Margin/VBox"]
+text = "R buff: inactive"
+
 [node name="Help" type="Label" parent="HUD/Panel/Margin/VBox"]
-text = "RMB move/attack · S stop · Esc clear · MMB pan · Wheel zoom"
+text = "Q/W/E then LMB · RMB/Esc cancel · R self · RMB commands · S stop"

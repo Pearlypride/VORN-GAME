@@ -8,8 +8,10 @@ enum CommandState { IDLE, MOVE, ATTACK, STOP }
 
 @export_range(0.1, 100.0, 0.1) var acceleration: float = 24.0
 @export_range(0.05, 1.0, 0.05) var arrival_tolerance: float = 0.25
+@export var hero_definition: HeroDefinition
 var _stats: ActorStats
 var _combat: CombatComponent
+var _abilities: AbilityController
 var _destination: Vector3
 var _has_destination: bool = false
 var command_state: CommandState = CommandState.IDLE
@@ -17,15 +19,23 @@ var command_state: CommandState = CommandState.IDLE
 func _ready() -> void:
 	_stats = $Stats as ActorStats
 	_combat = $Combat as CombatComponent
+	_abilities = $AbilityController as AbilityController
+	if hero_definition != null:
+		_stats.configure_from_hero(hero_definition)
+		_abilities.initialize(hero_definition, self, _stats)
 	_combat.target_changed.connect(_on_target_changed)
 
 func move_to(world_position: Vector3) -> void:
+	if not is_alive():
+		return
 	_combat.set_target(null)
 	_destination = world_position
 	_has_destination = true
 	_set_command_state(CommandState.MOVE)
 
 func attack_target(target: Node3D) -> void:
+	if not is_alive():
+		return
 	_has_destination = false
 	_combat.set_target(target)
 	if _combat.target == null:
@@ -52,6 +62,9 @@ func clear_command() -> void:
 func get_command_state_name() -> String:
 	return CommandState.keys()[command_state]
 
+func is_alive() -> bool:
+	return _stats != null and _stats.current_health > 0.0
+
 func _set_command_state(state: CommandState) -> void:
 	if command_state == state:
 		return
@@ -63,8 +76,11 @@ func _on_target_changed(new_target: Node3D) -> void:
 		_set_command_state(CommandState.IDLE)
 
 func _physics_process(delta: float) -> void:
+	if not is_alive():
+		velocity = Vector3.ZERO
+		return
 	var desired_direction := Vector3.ZERO
-	var desired_speed := _stats.movement_speed
+	var desired_speed := _stats.get_effective_movement_speed()
 	var desired_target: Vector3
 	var has_desired_target := false
 	var target_stats := _combat.get_target_stats()
